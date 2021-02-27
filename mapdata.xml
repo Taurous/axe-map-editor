@@ -1,0 +1,33 @@
+<Map>
+    <View>
+        <Position x="40.684975" y="-62.40321"/>
+        <Scale x="1" y="1"/>
+    </View>
+    <Tilemap>
+        <Path>resources/tex/patternPack_tilesheet.png</Path>
+        <TileSize x="32" y="32"/>
+    </Tilemap>
+    <Tiles count="7">
+        <Tile textureid="0">
+            <Position x="-2" y="-1"/>
+        </Tile>
+        <Tile textureid="0">
+            <Position x="6" y="-4"/>
+        </Tile>
+        <Tile textureid="0">
+            <Position x="1" y="-1"/>
+        </Tile>
+        <Tile textureid="0">
+            <Position x="-5" y="-5"/>
+        </Tile>
+        <Tile textureid="0">
+            <Position x="-4" y="-6"/>
+        </Tile>
+        <Tile textureid="0">
+            <Position x="6" y="-5"/>
+        </Tile>
+        <Tile textureid="0">
+            <Position x="2" y="-4"/>
+        </Tile>
+    </Tiles>
+</Map>
