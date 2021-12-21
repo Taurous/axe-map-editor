@@ -20,7 +20,7 @@ PlayState::~PlayState()
 void PlayState::pause() {}
 void PlayState::resume() {}
 
-void PlayState::handleEvents()
+void PlayState::handleEvents(const ALLEGRO_EVENT &ev)
 {
 	int tile_size = map->tilemap->tile_size;
 

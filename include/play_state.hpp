@@ -21,7 +21,7 @@ public:
 	void pause() override;
 	void resume() override;
 
-	void handleEvents() override;
+	void handleEvents(const ALLEGRO_EVENT &ev) override;
 	void update(float delta_time) override;
 	void draw() override;
 

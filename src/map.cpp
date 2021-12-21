@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <iostream> // for debugging
 #include <iomanip>
+#include <math.h> // floor
 
 #include <allegro5/allegro.h>
 #include <allegro5/allegro_primitives.h>
@@ -198,7 +199,7 @@ bool Map::save(std::string file, const View& v)
 
 	//Dump Tiles into XML
 	xml::XMLElement* tileTagElement = saveFile.NewElement("Tiles");
-	tileTagElement->SetAttribute("count", v_tiles.size());
+	tileTagElement->SetAttribute("count", (unsigned int)v_tiles.size());
 	for (auto& v : v_tiles)
 	{
 		xml::XMLElement* tileElement = saveFile.NewElement("Tile");
