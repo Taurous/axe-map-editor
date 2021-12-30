@@ -1,7 +1,8 @@
-#pragma once
-
-#include <allegro5/allegro.h>
+#ifndef UTIL_H
+#define UTIL_H
 
 #include "vec.hpp"
 
 vec2f getScreenSize();
+
+#endif

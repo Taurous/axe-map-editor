@@ -1,3 +1,4 @@
+#include <allegro5/allegro.h>
 #include "util.hpp"
 
 vec2f getScreenSize()

@@ -7,12 +7,10 @@
 
 #include "abstract_state.hpp"
 
-#include "view.h"
+#include "view.hpp"
 #include "map.hpp"
 #include "command.hpp"
 #include "edit_commands.hpp"
-
-#include "util.hpp"
 
 enum PLACER
 {

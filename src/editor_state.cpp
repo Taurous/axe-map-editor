@@ -5,6 +5,7 @@
 
 #include "input.hpp"
 #include "state_machine.hpp"
+#include "util.hpp"
 
 constexpr int SIDEBAR_WIDTH = 256;
 constexpr int BOTTOM_BAR_HEIGHT = 40;
@@ -23,7 +24,7 @@ void resizeView(View &v)
 EditorState::EditorState(StateMachine& state_machine, InputHandler& input)
 	: AbstractState(state_machine, input), fn(nullptr), dragging(false), draw_grid(true), filling(false)
 {
-	fn = al_load_font("C:/Windows/Fonts/arial.ttf", 18, 0);
+	fn = al_load_font("/usr/share/fonts/truetype/ubuntu/Ubuntu-R.ttf", 18, 0);
 
 	view.world_pos = { 0.f, 0.f };
 	view.screen_pos = { 0.f, 0.f };

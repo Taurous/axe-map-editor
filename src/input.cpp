@@ -2,7 +2,7 @@
 
 #include <iostream> // For std::cerr
 
-InputHandler::InputHandler() : m_flags(INPUT::MOD::NONE), m_char_pressed(NULL)
+InputHandler::InputHandler() : m_flags(INPUT::MOD::NONE), m_char_pressed(0)
 {
 	if (!al_is_system_installed())
 	{
@@ -28,7 +28,7 @@ InputHandler::~InputHandler()
 
 void InputHandler::getInput(const ALLEGRO_EVENT &ev)
 {
-	m_char_pressed = NULL;
+	m_char_pressed = 0;
 
 	m_prev_mouse_state = m_cur_mouse_state;
 	al_get_mouse_state(&m_cur_mouse_state);
