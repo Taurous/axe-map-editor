@@ -22,7 +22,7 @@ void resizeView(View &v)
 }
 
 EditorState::EditorState(StateMachine& state_machine, InputHandler& input)
-	: AbstractState(state_machine, input), fn(nullptr), dragging(false), draw_grid(true), filling(false)
+	: AbstractState(state_machine, input), fn(nullptr), dragging(false), filling(false), draw_grid(true)
 {
 	fn = al_load_font("/usr/share/fonts/truetype/ubuntu/Ubuntu-R.ttf", 18, 0);
 
@@ -91,7 +91,7 @@ void EditorState::handleEvents(const ALLEGRO_EVENT &ev)
 		}
 		else if (m_input.isMousePressed(INPUT::MOUSE::LEFT))
 		{
-			pushCommand(std::make_unique<InsertTileCommand>(map, Tile{ 0, map.getTilePos(view, m_input.getMousePos()) }));
+			pushCommand(std::make_unique<InsertTileCommand>(map, Tile{ 1, map.getTilePos(view, m_input.getMousePos()) }));
 		}
 		else if (m_input.isMousePressed(INPUT::MOUSE::RIGHT))
 		{

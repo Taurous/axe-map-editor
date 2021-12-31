@@ -2,7 +2,7 @@
 
 #include <iostream> // For std::cerr
 
-InputHandler::InputHandler() : m_flags(INPUT::MOD::NONE), m_char_pressed(0)
+InputHandler::InputHandler() : m_char_pressed(0), m_flags(INPUT::MOD::NONE)
 {
 	if (!al_is_system_installed())
 	{

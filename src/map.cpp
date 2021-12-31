@@ -331,7 +331,7 @@ bool Map::load(std::string file, View &v, bool restore_view)
 	}
 
 	//If total tiles read is equal to the number stored in the Tiles tag then load is probably corrent.
-	if (count == m.v_tiles.size())
+	if ((unsigned int)count == m.v_tiles.size())
 	{
 		if (!restore_view)
 		{

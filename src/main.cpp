@@ -43,9 +43,10 @@ int main(int argc, char ** argv)
 
 #ifndef _DEBUG
 	std::ofstream log("errorlog.txt");
+	std::streambuf *oldbf;
 	if (log.is_open())
 	{
-		std::cerr.rdbuf(log.rdbuf());
+		oldbf = std::cerr.rdbuf(log.rdbuf());
 	}
 #endif
 
@@ -137,6 +138,14 @@ int main(int argc, char ** argv)
 	al_destroy_timer(timer);
 	al_destroy_event_queue(ev_queue);
 	al_destroy_display(display);
+
+#ifndef _DEBUG
+	if (log.is_open())
+	{
+		log.close();
+		std::cerr.rdbuf(oldbf);
+	}
+#endif
 
 	return 0;
 }

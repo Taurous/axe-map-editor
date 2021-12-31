@@ -43,10 +43,8 @@ private:
 	vec2f mouse_pos;
 
 	vec2i fill_start_pos;
-	bool filling;
-
 	bool dragging;
-
+	bool filling;
 	bool draw_grid;
 
 	std::list<std::unique_ptr<Command>> redo_stack;

@@ -7,7 +7,7 @@
 class View
 {
 public:
-	View() : world_pos({ 0, 0 }), screen_pos({ 0, 0 }), size({ 0, 0 }), scale({ 1, 1 }) { }
+	View() : world_pos({ 0, 0 }), scale({ 1, 1 }), screen_pos({ 0, 0 }), size({ 0, 0 }) { }
 	~View() {}
 
 	vec2f world_pos;
