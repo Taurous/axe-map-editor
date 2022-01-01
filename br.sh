@@ -1,4 +1,4 @@
 #!/bin/bash
 
-make rebuild
-bin/./main
+make
+bin/./editor

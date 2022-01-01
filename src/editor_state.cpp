@@ -116,13 +116,13 @@ void EditorState::handleEvents(const ALLEGRO_EVENT &ev)
 	{
 		if (map.isEditable())
 		{
-			map.save("mapdata.xml", view);
+			map.save("mapdata/data.xml", view);
 			std::cout << "Saved mapdata.xml" << std::endl;
 		}
 	}
 	else if (m_input.isKeyPressed(ALLEGRO_KEY_L, INPUT::MOD::CTRL))
 	{
-		if (map.load("mapdata.xml", view, SAVE_VIEW))
+		if (map.load("mapdata/data.xml", view, SAVE_VIEW))
 		{
 			std::cout << "Loaded mapdata.xml" << std::endl;
 		}

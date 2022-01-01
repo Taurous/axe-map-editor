@@ -9,7 +9,7 @@
 
 class StateMachine
 {
-public:
+public: // test
 	StateMachine();
 
 	StateMachine(const StateMachine &other) = delete;
