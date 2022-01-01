@@ -74,8 +74,6 @@ public:
 				cmds.push_back(std::make_unique<InsertTileCommand>(m, Tile{ t_id, {x, y} }));
 			}
 		}
-
-		std::cout << "FileTileCommand" << std::endl;
 	}
 
 	void redo() override

@@ -32,7 +32,7 @@ EditorState::EditorState(StateMachine& state_machine, InputHandler& input)
 
 	resizeView(view);
 
-	map.create("resources/tex/patternPack_tilesheet.png", { 32, 32 });
+	map.create("resources/tex/Dark_lvl1.png", { 64, 64 });
 }
 
 EditorState::~EditorState()
@@ -131,7 +131,6 @@ void EditorState::handleEvents(const ALLEGRO_EVENT &ev)
 		// UNDO
 		if (!undo_stack.empty())
 		{
-			std::cout << "UNDOING" << std::endl;
 			Command *c = undo_stack.top().release();
 			undo_stack.pop();
 
