@@ -29,6 +29,7 @@ public:
 	void getVisibleTileRect(const View& v, vec2i& tl, vec2i& br);
 
 	void setTilemap(std::string path, vec2i tile_size);
+	ALLEGRO_BITMAP* getTilemapBitmap();
 	void insertTile(Tile t);
 	void removeTile(const vec2i& p);
 	vec2i getTilePos(const View& v, const vec2f& screen_pos);

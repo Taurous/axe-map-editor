@@ -32,7 +32,7 @@ EditorState::EditorState(StateMachine& state_machine, InputHandler& input)
 
 	resizeView(view);
 
-	map.create("resources/tex/Dark_lvl1.png", { 64, 64 });
+	map.create("resources/tex/TX Tileset Grass.png", { 64, 64 });
 }
 
 EditorState::~EditorState()
@@ -214,6 +214,24 @@ void EditorState::draw()
 	auto num_tiles = std::distance(map.it_visible_begin, map.v_tiles.end());
 
 	al_draw_textf(fn, al_map_rgb(0, 0, 0), 150, screen_dim.y - (BOTTOM_BAR_HEIGHT / 2) - 10, 0, "Tiles Drawn: %i", (int)num_tiles);
+
+	// Tilemap selection
+	int padding = 4;
+	int bkg_padding = 2;
+
+	vec2f tsize, tpos, tscaled;
+
+	tsize.x = al_get_bitmap_width(map.getTilemapBitmap());
+	tsize.y = al_get_bitmap_height(map.getTilemapBitmap());
+
+	tpos.x = view.size.x + padding;
+	tpos.y = padding;
+
+	tscaled.x = SIDEBAR_WIDTH-(padding*2);
+	tscaled.y = tsize.y * (tscaled.x / tsize.x);
+
+	al_draw_filled_rectangle(tpos.x - bkg_padding, tpos.y - bkg_padding, tpos.x + tscaled.x + bkg_padding, tpos.y + tscaled.y + bkg_padding, al_map_rgb(0, 0, 0));
+	al_draw_scaled_bitmap(map.getTilemapBitmap(), 0, 0, tsize.x, tsize.y, tpos.x, tpos.y, tscaled.x, tscaled.y, 0);
 
 	//Debug
 	al_draw_textf(fn, al_map_rgb(255, 255, 255), 10, 10, 0, "undo stack size: %li", undo_stack.size());

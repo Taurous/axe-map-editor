@@ -94,6 +94,11 @@ void Map::setTilemap(std::string path, vec2i tile_size)
 	tilemap.reset(loadTilemap(path, tile_size));
 }
 
+ALLEGRO_BITMAP* Map::getTilemapBitmap()
+{
+	return tilemap->bmp;
+}
+
 void Map::insertTile(Tile t)
 {
 	auto e = std::find_if(v_tiles.begin(), v_tiles.end(), [&t](Tile v_t) {return (v_t.pos == t.pos); });
