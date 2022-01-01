@@ -56,7 +56,7 @@ public:
 
 	vec2f getMousePos() const;
 	bool isMouseInWindow() const;
-
+	
 private:
 	char m_char_pressed;
 	std::bitset<4> m_flags;

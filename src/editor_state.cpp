@@ -6,6 +6,7 @@
 #include "input.hpp"
 #include "state_machine.hpp"
 #include "util.hpp"
+#include "tile_selector.hpp"
 
 constexpr int SIDEBAR_WIDTH = 256;
 constexpr int BOTTOM_BAR_HEIGHT = 40;
@@ -216,22 +217,7 @@ void EditorState::draw()
 	al_draw_textf(fn, al_map_rgb(0, 0, 0), 150, screen_dim.y - (BOTTOM_BAR_HEIGHT / 2) - 10, 0, "Tiles Drawn: %i", (int)num_tiles);
 
 	// Tilemap selection
-	int padding = 4;
-	int bkg_padding = 2;
-
-	vec2f tsize, tpos, tscaled;
-
-	tsize.x = al_get_bitmap_width(map.getTilemapBitmap());
-	tsize.y = al_get_bitmap_height(map.getTilemapBitmap());
-
-	tpos.x = view.size.x + padding;
-	tpos.y = padding;
-
-	tscaled.x = SIDEBAR_WIDTH-(padding*2);
-	tscaled.y = tsize.y * (tscaled.x / tsize.x);
-
-	al_draw_filled_rectangle(tpos.x - bkg_padding, tpos.y - bkg_padding, tpos.x + tscaled.x + bkg_padding, tpos.y + tscaled.y + bkg_padding, al_map_rgb(0, 0, 0));
-	al_draw_scaled_bitmap(map.getTilemapBitmap(), 0, 0, tsize.x, tsize.y, tpos.x, tpos.y, tscaled.x, tscaled.y, 0);
+	drawTileSelector(map, view, { view.size.x, 0 }, { SIDEBAR_WIDTH, 200 }, 4, 2);
 
 	//Debug
 	al_draw_textf(fn, al_map_rgb(255, 255, 255), 10, 10, 0, "undo stack size: %li", undo_stack.size());
