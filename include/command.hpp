@@ -5,7 +5,7 @@
 class Command
 {
 public:
-	Command() { std::cout << "Constructing Command: "; }
+	Command() {}
 	virtual ~Command() {}
 
 	virtual void redo() = 0;
