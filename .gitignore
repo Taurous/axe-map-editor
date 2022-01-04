@@ -1,5 +1,5 @@
+bin/
 build/
-debug/
-release/
 deps/
 mapdata/
+log/
