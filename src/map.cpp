@@ -117,7 +117,9 @@ void Map::insertTile(Tile t)
 
 void Map::removeTile(const vec2i& p)
 {
-	auto e = std::find_if(it_visible_begin, v_tiles.end(), [&p](Tile v_t) {return (v_t.pos == p); });
+	//Temp fix, look through all tiles to remove, if undoing tile placement that is not visible, would be skipped
+	//auto e = std::find_if(it_visible_begin, v_tiles.end(), [&p](Tile v_t) {return (v_t.pos == p); });
+	auto e = std::find_if(v_tiles.begin(), v_tiles.end(), [&p](Tile v_t) {return (v_t.pos == p); });
 
 	if (e != v_tiles.end())
 	{
