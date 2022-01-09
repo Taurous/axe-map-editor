@@ -1,6 +1,6 @@
 #pragma once
 
-#include <stack>
+#include <list>
 
 #include <allegro5/allegro.h>
 #include <allegro5/allegro_font.h>
@@ -48,8 +48,8 @@ private:
 	bool filling;
 	bool draw_grid;
 
-	std::stack<std::unique_ptr<Command>> redo_stack;
-	std::stack<std::unique_ptr<Command>> undo_stack;
+	std::list<std::unique_ptr<Command>> redo_stack;
+	std::list<std::unique_ptr<Command>> undo_stack;
 
 	void pushCommand(std::unique_ptr<Command> c);
 };

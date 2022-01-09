@@ -134,12 +134,12 @@ void EditorState::handleEvents(const ALLEGRO_EVENT &ev)
 		// UNDO
 		if (!undo_stack.empty())
 		{
-			Command *c = undo_stack.top().release();
-			undo_stack.pop();
+			Command *c = undo_stack.back().release();
+			undo_stack.pop_back();
 
 			c->undo();
 			
-			redo_stack.push(std::unique_ptr<Command>(c));
+			redo_stack.push_back(std::unique_ptr<Command>(c));
 		}
 	}
 	else if (m_input.isKeyPressed(ALLEGRO_KEY_Y, INPUT::MOD::CTRL))
@@ -147,12 +147,12 @@ void EditorState::handleEvents(const ALLEGRO_EVENT &ev)
 		// REDO
 		if (!redo_stack.empty())
 		{
-			Command *c = redo_stack.top().release();
-			redo_stack.pop();
+			Command *c = redo_stack.back().release();
+			redo_stack.pop_back();
 
 			c->redo();
 
-			undo_stack.push(std::unique_ptr<Command>(c));
+			undo_stack.push_back(std::unique_ptr<Command>(c));
 		}
 	}
 }
@@ -228,13 +228,10 @@ void EditorState::draw()
 
 void EditorState::pushCommand(std::unique_ptr<Command> c)
 {
-	undo_stack.push(std::move(c));
+	undo_stack.push_back(std::move(c));
 
-	while (!redo_stack.empty())
-	{
-		redo_stack.pop();
-	}
+	redo_stack.clear();
 
 	//Limit undo stack size
-	//if (undo_stack.size() > UNDO_STACK_LIMIT) undo_stack.pop_front(); Change to stack, can no longer pop_front. change back to list?
+	if (undo_stack.size() > UNDO_STACK_LIMIT) undo_stack.pop_front();
 }
