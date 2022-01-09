@@ -48,14 +48,14 @@ void EditorState::pause()
 
 void EditorState::resume()
 {
-	m_input.setKeybind(INPUT::MOUSE::WHEELUP, 	std::bind(&EditorState::onMouseWheelUp, this));
-	m_input.setKeybind(INPUT::MOUSE::WHEELDOWN, std::bind(&EditorState::onMouseWheelDown, this));
-	m_input.setKeybind(INPUT::MOUSE::MIDDLE, 	std::bind(&EditorState::onMiddleMouseDown, this));
-	m_input.setKeybind(INPUT::MOUSE::MIDDLE, 	std::bind(&EditorState::onMiddleMouseUp, this), false);
-	m_input.setKeybind(INPUT::MOUSE::LEFT, 		std::bind(&EditorState::onLeftMouseDown, this));
-	m_input.setKeybind(INPUT::MOUSE::LEFT, 		std::bind(&EditorState::onLeftMouseUp, this), false);
-	m_input.setKeybind(INPUT::MOUSE::RIGHT, 	std::bind(&EditorState::onRightMouseDown, this));
-	m_input.setKeybind(INPUT::MOUSE::RIGHT, 	std::bind(&EditorState::onRightMouseUp, this), false);
+	m_input.setKeybind(MOUSE::WHEELUP, 	std::bind(&EditorState::onMouseWheelUp, this));
+	m_input.setKeybind(MOUSE::WHEELDOWN, std::bind(&EditorState::onMouseWheelDown, this));
+	m_input.setKeybind(MOUSE::MIDDLE, 	std::bind(&EditorState::onMiddleMouseDown, this));
+	m_input.setKeybind(MOUSE::MIDDLE, 	std::bind(&EditorState::onMiddleMouseUp, this), false);
+	m_input.setKeybind(MOUSE::LEFT, 		std::bind(&EditorState::onLeftMouseDown, this));
+	m_input.setKeybind(MOUSE::LEFT, 		std::bind(&EditorState::onLeftMouseUp, this), false);
+	m_input.setKeybind(MOUSE::RIGHT, 	std::bind(&EditorState::onRightMouseDown, this));
+	m_input.setKeybind(MOUSE::RIGHT, 	std::bind(&EditorState::onRightMouseUp, this), false);
 	m_input.setKeybind(ALLEGRO_KEY_G,			[&](){ draw_grid = !draw_grid; });
 	m_input.setKeybind(ALLEGRO_KEY_Z, 			std::bind(&EditorState::undo, this));
 	m_input.setKeybind(ALLEGRO_KEY_Y, 			std::bind(&EditorState::redo, this));
@@ -74,7 +74,7 @@ void EditorState::handleEvents(const ALLEGRO_EVENT &ev)
 
 void EditorState::update(float delta_time)
 {
-	if (!m_input.isMouseDown(INPUT::MOUSE::MIDDLE) && map.isEditable())
+	if (!m_input.isMouseDown(MOUSE::MIDDLE) && map.isEditable())
 	{
 		vec2f direction{ 0,0 };
 		float vel = 200.f;
@@ -83,7 +83,7 @@ void EditorState::update(float delta_time)
 		if (m_input.isKeyDown(ALLEGRO_KEY_LEFT)	|| m_input.isKeyDown(ALLEGRO_KEY_A)) direction.x -= 1.f;
 		if (m_input.isKeyDown(ALLEGRO_KEY_RIGHT)|| m_input.isKeyDown(ALLEGRO_KEY_D)) direction.x += 1.f;
 		if (m_input.isKeyDown(ALLEGRO_KEY_UP)	|| m_input.isKeyDown(ALLEGRO_KEY_W)) direction.y -= 1.f;
-		if (m_input.isKeyDown(ALLEGRO_KEY_DOWN)	|| (m_input.isKeyDown(ALLEGRO_KEY_S) && !m_input.isModifierDown(INPUT::MOD::CTRL))) direction.y += 1.f;
+		if (m_input.isKeyDown(ALLEGRO_KEY_DOWN)	|| (m_input.isKeyDown(ALLEGRO_KEY_S) && !m_input.isModifierDown(ALLEGRO_KEYMOD_CTRL))) direction.y += 1.f;
 
 		view.world_pos += normalize(direction) * vel * delta_time;
 		map.sortMapVisibilty(view);
@@ -181,7 +181,7 @@ void EditorState::onLeftMouseUp()
 {
 	if (!map.isEditable()) return;
 	
-	if (m_input.isModifierDown(INPUT::MOD::SHIFT))
+	if (m_input.isModifierDown(ALLEGRO_KEYMOD_SHIFT))
 	{
 		pushCommand(std::make_unique<FillTileCommand>(map, 0, fill_start_pos, map.getTilePos(view, m_input.getMousePos())));
 	}
@@ -192,7 +192,7 @@ void EditorState::onLeftMouseDown()
 {
 	if (!map.isEditable()) return;
 	
-	if (m_input.isModifierDown(INPUT::MOD::SHIFT))
+	if (m_input.isModifierDown(ALLEGRO_KEYMOD_SHIFT))
 	{
 		filling = true;
 		fill_start_pos = map.getTilePos(view, m_input.getMousePos());
@@ -220,7 +220,7 @@ void EditorState::onRightMouseUp() { }
 
 void EditorState::saveMap()
 {
-	if (map.isEditable() && m_input.isModifierDown(INPUT::MOD::CTRL))
+	if (map.isEditable() && m_input.isModifierDown(ALLEGRO_KEYMOD_CTRL))
 	{
 		map.save("mapdata/data.xml", view);
 		std::cout << "Saved mapdata.xml" << std::endl;
@@ -228,7 +228,7 @@ void EditorState::saveMap()
 }
 void EditorState::loadMap()
 {
-	if (m_input.isModifierDown(INPUT::MOD::CTRL))
+	if (m_input.isModifierDown(ALLEGRO_KEYMOD_CTRL))
 	{
 		if (map.load("mapdata/data.xml", view, SAVE_VIEW))
 		{
@@ -241,7 +241,7 @@ void EditorState::loadMap()
 
 void EditorState::undo()
 {
-	if (!undo_stack.empty() && m_input.isModifierDown(INPUT::MOD::CTRL))
+	if (!undo_stack.empty() && m_input.isModifierDown(ALLEGRO_KEYMOD_CTRL))
 	{
 		Command *c = undo_stack.back().release();
 		undo_stack.pop_back();
@@ -254,7 +254,7 @@ void EditorState::undo()
 
 void EditorState::redo()
 {
-	if (!redo_stack.empty() && m_input.isModifierDown(INPUT::MOD::CTRL))
+	if (!redo_stack.empty() && m_input.isModifierDown(ALLEGRO_KEYMOD_CTRL))
 	{
 		Command *c = redo_stack.back().release();
 		redo_stack.pop_back();

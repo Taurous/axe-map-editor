@@ -1,6 +1,5 @@
 #pragma once
 
-#include <bitset>
 #include <functional> //for std::function & std::bind
 #include <map>
 
@@ -8,28 +7,16 @@
 
 #include "vec.hpp"
 
-namespace INPUT
+enum MOUSE
 {
-	enum MOUSE
-	{
-		LEFT = ALLEGRO_KEY_MAX + 1,
-		RIGHT,
-		MIDDLE,
-		BUTTON4,
-		BUTTON5,
-		WHEELUP,
-		WHEELDOWN
-	};
-
-	enum MOD
-	{
-		NONE, // Requires that no modifiers be pressed
-		SHIFT,
-		CTRL,
-		ALT,
-		ANY // Ignores modifiers that are pressed (Allowing any modifier to be pressed)
-	};
-}
+	LEFT = ALLEGRO_KEY_MAX + 1,
+	RIGHT,
+	MIDDLE,
+	BUTTON4,
+	BUTTON5,
+	WHEELUP,
+	WHEELDOWN
+};
 
 class InputHandler
 {
@@ -46,17 +33,15 @@ public:
 
 	void getInput(const ALLEGRO_EVENT &ev);
 
-	char getChar() const;
+	bool isKeyPressed(const int key, const int mod = -1) const;
+	bool isKeyReleased(const int key, const int mod = -1) const;
+	bool isKeyDown(const int key, const int mod = -1) const;
 
-	bool isKeyPressed(const int key, const int mod = INPUT::MOD::ANY) const;
-	bool isKeyReleased(const int key, const int mod = INPUT::MOD::ANY) const;
-	bool isKeyDown(const int key, const int mod = INPUT::MOD::ANY) const;
-
-	bool isMousePressed(int button, const int mod = INPUT::MOD::ANY) const;
-	bool isMouseReleased(int button, const int mod = INPUT::MOD::ANY) const;
-	bool isMouseDown(int button, const int mod = INPUT::MOD::ANY) const;
-	bool isMouseWheelDown(const int mod = INPUT::MOD::ANY) const;
-	bool isMouseWheelUp(const int mod = INPUT::MOD::ANY) const;
+	bool isMousePressed(int button, const int mod = -1) const;
+	bool isMouseReleased(int button, const int mod = -1) const;
+	bool isMouseDown(int button, const int mod = -1) const;
+	bool isMouseWheelDown(const int mod = -1) const;
+	bool isMouseWheelUp(const int mod = -1) const;
 
 	bool isModifierDown(const int mod);
 
@@ -64,12 +49,12 @@ public:
 	bool isMouseInWindow() const;
 
 	void setKeybind(int key, std::function<void(void)> callback, bool pressed = true);
+	void clearKeybind(int key);
 	void callKeybind(int key, bool pressed);
 	
 private:
-	char m_char_pressed;
-	std::bitset<4> m_flags;
-
+	int mods;
+	
 	ALLEGRO_KEYBOARD_STATE m_prev_key_state;
 	ALLEGRO_KEYBOARD_STATE m_cur_key_state;
 

@@ -84,6 +84,9 @@ int main(int argc, char ** argv)
 	StateMachine m_sm;
 	m_sm.pushState(std::make_unique<EditorState>(m_sm, m_input));
 
+	// Set program lifetime keybinds
+	m_input.setKeybind(ALLEGRO_KEY_ESCAPE, [&m_sm](){ m_sm.quit(); });
+
 	bool redraw = true;
 	al_start_timer(timer);
 	auto last_time = std::chrono::steady_clock::now();
@@ -99,9 +102,7 @@ int main(int argc, char ** argv)
 
 		m_input.getInput(ev);
 		m_sm.handleEvents(ev);
-
-		if (m_input.isKeyPressed(ALLEGRO_KEY_ESCAPE)) m_sm.quit();
-
+		
 		switch (ev.type)
 		{
 		case ALLEGRO_EVENT_DISPLAY_CLOSE:
