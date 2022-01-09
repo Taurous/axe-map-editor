@@ -23,6 +23,7 @@ void StateMachine::pushState(std::unique_ptr<AbstractState> state)
 	}
 
 	m_states.push_back(std::move(state));
+	m_states.back().get()->resume();
 }
 
 void StateMachine::popState()

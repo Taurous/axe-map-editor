@@ -33,6 +33,18 @@ public:
 	void update(float delta_time) override;
 	void draw() override;
 
+	void saveMap();
+	void loadMap();
+
+	void onMouseWheelUp();
+	void onMouseWheelDown();
+	void onMiddleMouseUp();
+	void onMiddleMouseDown();
+	void onLeftMouseUp();
+	void onLeftMouseDown();
+	void onRightMouseDown();
+	void onRightMouseUp();
+
 private:
 	ALLEGRO_FONT* fn;
 

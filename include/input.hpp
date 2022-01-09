@@ -1,6 +1,8 @@
 #pragma once
 
 #include <bitset>
+#include <functional> //for std::function & std::bind
+#include <map>
 
 #include <allegro5/allegro.h>
 
@@ -10,9 +12,13 @@ namespace INPUT
 {
 	enum MOUSE
 	{
-		LEFT = 1,
-		RIGHT = 2,
-		MIDDLE = 3
+		LEFT = ALLEGRO_KEY_MAX + 1,
+		RIGHT,
+		MIDDLE,
+		BUTTON4,
+		BUTTON5,
+		WHEELUP,
+		WHEELDOWN
 	};
 
 	enum MOD
@@ -46,9 +52,9 @@ public:
 	bool isKeyReleased(const int key, const int mod = INPUT::MOD::ANY) const;
 	bool isKeyDown(const int key, const int mod = INPUT::MOD::ANY) const;
 
-	bool isMousePressed(const int button, const int mod = INPUT::MOD::ANY) const;
-	bool isMouseReleased(const int button, const int mod = INPUT::MOD::ANY) const;
-	bool isMouseDown(const int button, const int mod = INPUT::MOD::ANY) const;
+	bool isMousePressed(int button, const int mod = INPUT::MOD::ANY) const;
+	bool isMouseReleased(int button, const int mod = INPUT::MOD::ANY) const;
+	bool isMouseDown(int button, const int mod = INPUT::MOD::ANY) const;
 	bool isMouseWheelDown(const int mod = INPUT::MOD::ANY) const;
 	bool isMouseWheelUp(const int mod = INPUT::MOD::ANY) const;
 
@@ -56,6 +62,9 @@ public:
 
 	vec2f getMousePos() const;
 	bool isMouseInWindow() const;
+
+	void setKeybind(int key, std::function<void(void)> callback, bool pressed = true);
+	void callKeybind(int key, bool pressed);
 	
 private:
 	char m_char_pressed;
@@ -66,4 +75,7 @@ private:
 
 	ALLEGRO_MOUSE_STATE m_prev_mouse_state;
 	ALLEGRO_MOUSE_STATE m_cur_mouse_state;
+
+	std::map<int, std::function<void(void)> > keybinds_r;
+	std::map<int, std::function<void(void)> > keybinds_p;
 };

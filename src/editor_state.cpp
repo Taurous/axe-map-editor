@@ -1,5 +1,6 @@
 #include <iostream>
 #include <math.h>
+#include <functional>
 
 #include "editor_state.hpp"
 
@@ -42,10 +43,14 @@ EditorState::~EditorState()
 
 void EditorState::pause()
 {
+
 }
 
 void EditorState::resume()
 {
+	m_input.setKeybind(INPUT::MOUSE::WHEELUP, std::function<void(void)>(std::bind(&EditorState::onMouseWheelUp, this)));
+	m_input.setKeybind(ALLEGRO_KEY_S, std::function<void(void)>(std::bind(&EditorState::saveMap, this)));
+	m_input.setKeybind(ALLEGRO_KEY_L, std::function<void(void)>(std::bind(&EditorState::loadMap, this)));
 }
 
 void EditorState::handleEvents(const ALLEGRO_EVENT &ev)
@@ -57,12 +62,7 @@ void EditorState::handleEvents(const ALLEGRO_EVENT &ev)
 	}
 	if (map.isEditable())
 	{
-		if (m_input.isMouseWheelUp() && view.scale.x <= 3.f)
-		{
-			view.scale += { 0.1f, 0.1f };
-			map.sortMapVisibilty(view);
-		}
-		else if (m_input.isMouseWheelDown() && view.scale.x >= 0.4f)
+		if (m_input.isMouseWheelDown() && view.scale.x >= 0.4f)
 		{
 			view.scale -= { 0.1f, 0.1f };
 			map.sortMapVisibilty(view);
@@ -113,21 +113,6 @@ void EditorState::handleEvents(const ALLEGRO_EVENT &ev)
 	if (m_input.isKeyPressed(ALLEGRO_KEY_G))
 	{
 		draw_grid = !draw_grid;
-	}
-	else if (m_input.isKeyPressed(ALLEGRO_KEY_S, INPUT::MOD::CTRL))
-	{
-		if (map.isEditable())
-		{
-			map.save("mapdata/data.xml", view);
-			std::cout << "Saved mapdata.xml" << std::endl;
-		}
-	}
-	else if (m_input.isKeyPressed(ALLEGRO_KEY_L, INPUT::MOD::CTRL))
-	{
-		if (map.load("mapdata/data.xml", view, SAVE_VIEW))
-		{
-			std::cout << "Loaded mapdata.xml" << std::endl;
-		}
 	}
 	else if (m_input.isKeyPressed(ALLEGRO_KEY_Z, INPUT::MOD::CTRL))
 	{
@@ -234,4 +219,39 @@ void EditorState::pushCommand(std::unique_ptr<Command> c)
 
 	//Limit undo stack size
 	if (undo_stack.size() > UNDO_STACK_LIMIT) undo_stack.pop_front();
+}
+
+void EditorState::onMouseWheelUp()
+{
+	if (map.isEditable() && view.scale.x <= 3.f)
+	{
+		view.scale += { 0.1f, 0.1f };
+		map.sortMapVisibilty(view);
+	}
+}
+void EditorState::onMouseWheelDown() { }
+void EditorState::onMiddleMouseUp() { }
+void EditorState::onMiddleMouseDown() { }
+void EditorState::onLeftMouseUp() { }
+void EditorState::onLeftMouseDown() { }
+void EditorState::onRightMouseDown() { }
+void EditorState::onRightMouseUp() { }
+
+void EditorState::saveMap()
+{
+	if (map.isEditable() && m_input.isModifierDown(INPUT::MOD::CTRL))
+	{
+		map.save("mapdata/data.xml", view);
+		std::cout << "Saved mapdata.xml" << std::endl;
+	}
+}
+void EditorState::loadMap()
+{
+	if (m_input.isModifierDown(INPUT::MOD::CTRL))
+	{
+		if (map.load("mapdata/data.xml", view, SAVE_VIEW))
+		{
+			std::cout << "Loaded mapdata.xml" << std::endl;
+		}
+	}
 }

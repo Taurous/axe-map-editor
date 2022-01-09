@@ -36,60 +36,77 @@ void InputHandler::getInput(const ALLEGRO_EVENT &ev)
 	m_prev_key_state = m_cur_key_state;
 	al_get_keyboard_state(&m_cur_key_state);
 
-	if (ev.type == ALLEGRO_EVENT_KEY_DOWN)
+	switch (ev.type)
 	{
-		// Get Modifiers Pressed
-		switch (ev.keyboard.keycode)
-		{
-		case ALLEGRO_KEY_LSHIFT:
-		case ALLEGRO_KEY_RSHIFT:
-			m_flags.set(INPUT::MOD::SHIFT);
-			m_flags.reset(INPUT::MOD::NONE);
-			break;
-		case ALLEGRO_KEY_ALTGR:
-		case ALLEGRO_KEY_ALT:
-			m_flags.set(INPUT::MOD::ALT);
-			m_flags.reset(INPUT::MOD::NONE);
-			break;
-		case ALLEGRO_KEY_LCTRL:
-		case ALLEGRO_KEY_RCTRL:
-			m_flags.set(INPUT::MOD::CTRL);
-			m_flags.reset(INPUT::MOD::NONE);
-			break;
+		case ALLEGRO_EVENT_MOUSE_AXES:
+			if (ev.mouse.dz > 0) callKeybind(INPUT::MOUSE::WHEELUP, true);
+			else if (ev.mouse.dz < 0) callKeybind(INPUT::MOUSE::WHEELDOWN, true);
+		break;
+
+		case ALLEGRO_EVENT_MOUSE_BUTTON_DOWN:
+			callKeybind(ALLEGRO_KEY_MAX + ev.mouse.button, true);
+		break;
+
+		case ALLEGRO_EVENT_MOUSE_BUTTON_UP:
+			callKeybind(ALLEGRO_KEY_MAX + ev.mouse.button, false);
+		break;
+
+		case ALLEGRO_EVENT_KEY_DOWN:
+			callKeybind(ev.keyboard.keycode, true);
+
+			// Get Modifiers Pressed
+			switch (ev.keyboard.keycode)
+			{
+			case ALLEGRO_KEY_LSHIFT:
+			case ALLEGRO_KEY_RSHIFT:
+				m_flags.set(INPUT::MOD::SHIFT);
+				m_flags.reset(INPUT::MOD::NONE);
+				break;
+			case ALLEGRO_KEY_ALTGR:
+			case ALLEGRO_KEY_ALT:
+				m_flags.set(INPUT::MOD::ALT);
+				m_flags.reset(INPUT::MOD::NONE);
+				break;
+			case ALLEGRO_KEY_LCTRL:
+			case ALLEGRO_KEY_RCTRL:
+				m_flags.set(INPUT::MOD::CTRL);
+				m_flags.reset(INPUT::MOD::NONE);
+				break;
+			default:
+				break;
+			};
+		break;
+
+		case ALLEGRO_EVENT_KEY_UP:
+			callKeybind(ev.keyboard.keycode, false);
+			switch (ev.keyboard.keycode)
+			{
+			case ALLEGRO_KEY_LSHIFT:
+			case ALLEGRO_KEY_RSHIFT:
+				m_flags.reset(INPUT::MOD::SHIFT);
+				break;
+			case ALLEGRO_KEY_ALTGR:
+			case ALLEGRO_KEY_ALT:
+				m_flags.reset(INPUT::MOD::ALT);
+				break;
+			case ALLEGRO_KEY_LCTRL:
+			case ALLEGRO_KEY_RCTRL:
+				m_flags.reset(INPUT::MOD::CTRL);
+				break;
+			default:
+				break;
+			};
+
+			if (m_flags.none()) m_flags.set(INPUT::MOD::NONE);
+		break;
+
+		case ALLEGRO_EVENT_KEY_CHAR:
+			m_char_pressed = ev.keyboard.unichar;
+		break;
+
 		default:
-			break;
-		};
-	}
-
-	// Clear Modifiers Released
-	else if (ev.type == ALLEGRO_EVENT_KEY_UP)
-	{
-		switch (ev.keyboard.keycode)
-		{
-		case ALLEGRO_KEY_LSHIFT:
-		case ALLEGRO_KEY_RSHIFT:
-			m_flags.reset(INPUT::MOD::SHIFT);
-			break;
-		case ALLEGRO_KEY_ALTGR:
-		case ALLEGRO_KEY_ALT:
-			m_flags.reset(INPUT::MOD::ALT);
-			break;
-		case ALLEGRO_KEY_LCTRL:
-		case ALLEGRO_KEY_RCTRL:
-			m_flags.reset(INPUT::MOD::CTRL);
-			break;
-		default:
-			break;
-		};
-
-		if (m_flags.none()) m_flags.set(INPUT::MOD::NONE);
-	}
-
-	// Catch unicode key pressed
-	else if (ev.type == ALLEGRO_EVENT_KEY_CHAR)
-	{
-		m_char_pressed = ev.keyboard.unichar;
-	}
+		break;
+	};
 }
 
 char InputHandler::getChar() const
@@ -125,8 +142,9 @@ bool InputHandler::isKeyDown(const int key, const int mod) const
 	return false;
 }
 
-bool InputHandler::isMousePressed(const int button, const int mod) const
+bool InputHandler::isMousePressed(int button, const int mod) const
 {
+	button -= ALLEGRO_KEY_MAX;
 	if (al_mouse_button_down(&m_cur_mouse_state, button) && !al_mouse_button_down(&m_prev_mouse_state, button))
 	{
 		if (mod == INPUT::MOD::ANY || m_flags[mod]) return true;
@@ -134,8 +152,9 @@ bool InputHandler::isMousePressed(const int button, const int mod) const
 
 	return false;
 }
-bool InputHandler::isMouseReleased(const int button, const int mod) const
+bool InputHandler::isMouseReleased(int button, const int mod) const
 {
+	button -= ALLEGRO_KEY_MAX;
 	if (al_mouse_button_down(&m_prev_mouse_state, button) && !al_mouse_button_down(&m_cur_mouse_state, button))
 	{
 		if (mod == INPUT::MOD::ANY || m_flags[mod]) return true;
@@ -143,8 +162,9 @@ bool InputHandler::isMouseReleased(const int button, const int mod) const
 
 	return false;
 }
-bool InputHandler::isMouseDown(const int button, const int mod) const
+bool InputHandler::isMouseDown(int button, const int mod) const
 {
+	button -= ALLEGRO_KEY_MAX;
 	if (al_mouse_button_down(&m_cur_mouse_state, button))
 	{
 		if (mod == INPUT::MOD::ANY || m_flags[mod]) return true;
@@ -182,4 +202,22 @@ bool InputHandler::isMouseInWindow(void) const
 bool InputHandler::isModifierDown(const int mod)
 {
 	return m_flags.test(mod);
+}
+
+void InputHandler::setKeybind(int key, std::function<void(void)> callback, bool pressed)
+{
+	if (pressed) keybinds_p[key] = callback;
+	else keybinds_r[key] = callback;
+}
+
+void InputHandler::callKeybind(int key, bool pressed)
+{
+	if (pressed)
+	{
+		if (keybinds_p.find(key) != keybinds_p.end()) keybinds_p[key]();
+	}
+	else
+	{
+		if (keybinds_r.find(key) != keybinds_r.end()) keybinds_r[key]();
+	}
 }
