@@ -48,9 +48,19 @@ void EditorState::pause()
 
 void EditorState::resume()
 {
-	m_input.setKeybind(INPUT::MOUSE::WHEELUP, std::function<void(void)>(std::bind(&EditorState::onMouseWheelUp, this)));
-	m_input.setKeybind(ALLEGRO_KEY_S, std::function<void(void)>(std::bind(&EditorState::saveMap, this)));
-	m_input.setKeybind(ALLEGRO_KEY_L, std::function<void(void)>(std::bind(&EditorState::loadMap, this)));
+	m_input.setKeybind(INPUT::MOUSE::WHEELUP, 	std::bind(&EditorState::onMouseWheelUp, this));
+	m_input.setKeybind(INPUT::MOUSE::WHEELDOWN, std::bind(&EditorState::onMouseWheelDown, this));
+	m_input.setKeybind(INPUT::MOUSE::MIDDLE, 	std::bind(&EditorState::onMiddleMouseDown, this));
+	m_input.setKeybind(INPUT::MOUSE::MIDDLE, 	std::bind(&EditorState::onMiddleMouseUp, this), false);
+	m_input.setKeybind(INPUT::MOUSE::LEFT, 		std::bind(&EditorState::onLeftMouseDown, this));
+	m_input.setKeybind(INPUT::MOUSE::LEFT, 		std::bind(&EditorState::onLeftMouseUp, this), false);
+	m_input.setKeybind(INPUT::MOUSE::RIGHT, 	std::bind(&EditorState::onRightMouseDown, this));
+	m_input.setKeybind(INPUT::MOUSE::RIGHT, 	std::bind(&EditorState::onRightMouseUp, this), false);
+	m_input.setKeybind(ALLEGRO_KEY_G,			[&](){ draw_grid = !draw_grid; });
+	m_input.setKeybind(ALLEGRO_KEY_Z, 			std::bind(&EditorState::undo, this));
+	m_input.setKeybind(ALLEGRO_KEY_Y, 			std::bind(&EditorState::redo, this));
+	m_input.setKeybind(ALLEGRO_KEY_S, 			std::bind(&EditorState::saveMap, this));
+	m_input.setKeybind(ALLEGRO_KEY_L, 			std::bind(&EditorState::loadMap, this));
 }
 
 void EditorState::handleEvents(const ALLEGRO_EVENT &ev)
@@ -59,86 +69,6 @@ void EditorState::handleEvents(const ALLEGRO_EVENT &ev)
 	{
 		resizeView(view);
 		map.sortMapVisibilty(view);
-	}
-	if (map.isEditable())
-	{
-		if (m_input.isMouseWheelDown() && view.scale.x >= 0.4f)
-		{
-			view.scale -= { 0.1f, 0.1f };
-			map.sortMapVisibilty(view);
-		}
-
-		if (m_input.isMousePressed(INPUT::MOUSE::MIDDLE))
-		{
-			mouse_pos = m_input.getMousePos();
-			last_pos = view.world_pos;
-			dragging = true;
-		}
-		else if (m_input.isMouseReleased(INPUT::MOUSE::MIDDLE))
-		{
-			dragging = false;
-		}
-		else if (m_input.isMousePressed(INPUT::MOUSE::LEFT, INPUT::MOD::SHIFT))
-		{
-			filling = true;
-			fill_start_pos = map.getTilePos(view, m_input.getMousePos());
-		}
-		else if (m_input.isMouseReleased(INPUT::MOUSE::LEFT, INPUT::MOD::SHIFT))
-		{
-			filling = false;
-			pushCommand(std::make_unique<FillTileCommand>(map, 0, fill_start_pos, map.getTilePos(view, m_input.getMousePos())));
-		}
-		else if (m_input.isMousePressed(INPUT::MOUSE::LEFT))
-		{
-			if (map.getTile(map.getTilePos(view, m_input.getMousePos())).id != 0) // CHANGE 0 TO SELECTED TILE
-			{
-				pushCommand(std::make_unique<InsertTileCommand>(map, Tile{ 0, map.getTilePos(view, m_input.getMousePos()) }));
-			}
-		}
-		else if (m_input.isMousePressed(INPUT::MOUSE::RIGHT))
-		{
-			Tile t = map.getTile(map.getTilePos(view, m_input.getMousePos()));
-			if (t.id != -1)
-			{
-				pushCommand(std::make_unique<RemoveTileCommand>(map, t.pos));
-				map.sortMapVisibilty(view);
-			}
-		}
-		else if (m_input.isMouseReleased(INPUT::MOUSE::LEFT))
-		{
-			filling = false;
-		}
-	}
-
-	if (m_input.isKeyPressed(ALLEGRO_KEY_G))
-	{
-		draw_grid = !draw_grid;
-	}
-	else if (m_input.isKeyPressed(ALLEGRO_KEY_Z, INPUT::MOD::CTRL))
-	{
-		// UNDO
-		if (!undo_stack.empty())
-		{
-			Command *c = undo_stack.back().release();
-			undo_stack.pop_back();
-
-			c->undo();
-			
-			redo_stack.push_back(std::unique_ptr<Command>(c));
-		}
-	}
-	else if (m_input.isKeyPressed(ALLEGRO_KEY_Y, INPUT::MOD::CTRL))
-	{
-		// REDO
-		if (!redo_stack.empty())
-		{
-			Command *c = redo_stack.back().release();
-			redo_stack.pop_back();
-
-			c->redo();
-
-			undo_stack.push_back(std::unique_ptr<Command>(c));
-		}
 	}
 }
 
@@ -229,12 +159,63 @@ void EditorState::onMouseWheelUp()
 		map.sortMapVisibilty(view);
 	}
 }
-void EditorState::onMouseWheelDown() { }
-void EditorState::onMiddleMouseUp() { }
-void EditorState::onMiddleMouseDown() { }
-void EditorState::onLeftMouseUp() { }
-void EditorState::onLeftMouseDown() { }
-void EditorState::onRightMouseDown() { }
+void EditorState::onMouseWheelDown()
+{
+	if (map.isEditable() && view.scale.x >= 0.4f)
+	{
+		view.scale -= { 0.1f, 0.1f };
+		map.sortMapVisibilty(view);
+	}
+}
+void EditorState::onMiddleMouseUp()
+{
+	dragging = false;
+}
+void EditorState::onMiddleMouseDown()
+{
+	mouse_pos = m_input.getMousePos();
+	last_pos = view.world_pos;
+	dragging = true;
+}
+void EditorState::onLeftMouseUp()
+{
+	if (!map.isEditable()) return;
+	
+	if (m_input.isModifierDown(INPUT::MOD::SHIFT))
+	{
+		pushCommand(std::make_unique<FillTileCommand>(map, 0, fill_start_pos, map.getTilePos(view, m_input.getMousePos())));
+	}
+
+	filling = false;
+}
+void EditorState::onLeftMouseDown()
+{
+	if (!map.isEditable()) return;
+	
+	if (m_input.isModifierDown(INPUT::MOD::SHIFT))
+	{
+		filling = true;
+		fill_start_pos = map.getTilePos(view, m_input.getMousePos());
+	}
+	else
+	{
+		if (map.getTile(map.getTilePos(view, m_input.getMousePos())).id != 0) // CHANGE 0 TO SELECTED TILE
+		{
+			pushCommand(std::make_unique<InsertTileCommand>(map, Tile{ 0, map.getTilePos(view, m_input.getMousePos()) }));
+		}
+	}
+}
+void EditorState::onRightMouseDown()
+{
+	if (!map.isEditable()) return;
+
+	Tile t = map.getTile(map.getTilePos(view, m_input.getMousePos()));
+	if (t.id != -1)
+	{
+		pushCommand(std::make_unique<RemoveTileCommand>(map, t.pos));
+		map.sortMapVisibilty(view);
+	}
+}
 void EditorState::onRightMouseUp() { }
 
 void EditorState::saveMap()
@@ -252,6 +233,34 @@ void EditorState::loadMap()
 		if (map.load("mapdata/data.xml", view, SAVE_VIEW))
 		{
 			std::cout << "Loaded mapdata.xml" << std::endl;
+			undo_stack.clear();
+			redo_stack.clear();
 		}
+	}
+}
+
+void EditorState::undo()
+{
+	if (!undo_stack.empty() && m_input.isModifierDown(INPUT::MOD::CTRL))
+	{
+		Command *c = undo_stack.back().release();
+		undo_stack.pop_back();
+
+		c->undo();
+		
+		redo_stack.push_back(std::unique_ptr<Command>(c));
+	}
+}
+
+void EditorState::redo()
+{
+	if (!redo_stack.empty() && m_input.isModifierDown(INPUT::MOD::CTRL))
+	{
+		Command *c = redo_stack.back().release();
+		redo_stack.pop_back();
+
+		c->redo();
+
+		undo_stack.push_back(std::unique_ptr<Command>(c));
 	}
 }

@@ -45,6 +45,9 @@ public:
 	void onRightMouseDown();
 	void onRightMouseUp();
 
+	void undo();
+	void redo();
+
 private:
 	ALLEGRO_FONT* fn;
 
