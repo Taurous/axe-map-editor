@@ -3,4 +3,15 @@
 #include "view.hpp"
 #include "map.hpp"
 
-void drawTileSelector(Map& m, View& v, vec2f pos, vec2f size, float padding, float bkg_padding);
+class TileSelector
+{
+public:
+    TileSelector(Map &map, View &view);
+    ~TileSelector() { }
+
+    void draw(vec2f pos, vec2f max_dim, float inset, float padding);
+
+private:
+    Map &m;
+    View &v; 
+};

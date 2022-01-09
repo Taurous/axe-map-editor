@@ -9,6 +9,7 @@
 
 #include "view.hpp"
 #include "map.hpp"
+#include "tile_selector.hpp"
 #include "edit_commands.hpp"
 
 enum PLACER
@@ -37,6 +38,7 @@ private:
 
 	View view;
 	Map map;
+	TileSelector ts;
 
 	vec2f last_pos;
 	vec2f mouse_pos;

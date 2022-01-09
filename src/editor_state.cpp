@@ -6,7 +6,6 @@
 #include "input.hpp"
 #include "state_machine.hpp"
 #include "util.hpp"
-#include "tile_selector.hpp"
 
 constexpr int SIDEBAR_WIDTH = 256;
 constexpr int BOTTOM_BAR_HEIGHT = 40;
@@ -23,9 +22,9 @@ void resizeView(View &v)
 }
 
 EditorState::EditorState(StateMachine& state_machine, InputHandler& input)
-	: AbstractState(state_machine, input), fn(nullptr), dragging(false), filling(false), draw_grid(true)
+	: AbstractState(state_machine, input), fn(nullptr), ts(map, view), dragging(false), filling(false), draw_grid(true)
 {
-	fn = al_load_font("/usr/share/fonts/truetype/ubuntu/Ubuntu-R.ttf", 18, 0);
+	fn = al_load_font("resources/tex/Retro Gaming.ttf", 18, 0);
 
 	view.world_pos = { 0.f, 0.f };
 	view.screen_pos = { 0.f, 0.f };
@@ -33,7 +32,7 @@ EditorState::EditorState(StateMachine& state_machine, InputHandler& input)
 
 	resizeView(view);
 
-	map.create("resources/tex/TX Tileset Grass.png", { 64, 64 });
+	map.create("resources/tex/Dark_lvl0R.png", { 64, 64 });
 }
 
 EditorState::~EditorState()
@@ -91,7 +90,10 @@ void EditorState::handleEvents(const ALLEGRO_EVENT &ev)
 		}
 		else if (m_input.isMousePressed(INPUT::MOUSE::LEFT))
 		{
-			pushCommand(std::make_unique<InsertTileCommand>(map, Tile{ 1, map.getTilePos(view, m_input.getMousePos()) }));
+			if (map.getTile(map.getTilePos(view, m_input.getMousePos())).id != 0) // CHANGE 0 TO SELECTED TILE
+			{
+				pushCommand(std::make_unique<InsertTileCommand>(map, Tile{ 0, map.getTilePos(view, m_input.getMousePos()) }));
+			}
 		}
 		else if (m_input.isMousePressed(INPUT::MOUSE::RIGHT))
 		{
@@ -212,16 +214,16 @@ void EditorState::draw()
 	al_draw_textf(fn, al_map_rgb(0, 0, 0), 16, screen_dim.y - (BOTTOM_BAR_HEIGHT / 2) - 10, 0, "%i:%i",
 		(int)floor(cur_mouse_pos.x / map.tilemap->tile_size.x), (int)floor(cur_mouse_pos.y / map.tilemap->tile_size.y));
 
-	auto num_tiles = std::distance(map.it_visible_begin, map.v_tiles.end());
-
-	al_draw_textf(fn, al_map_rgb(0, 0, 0), 150, screen_dim.y - (BOTTOM_BAR_HEIGHT / 2) - 10, 0, "Tiles Drawn: %i", (int)num_tiles);
-
 	// Tilemap selection
-	drawTileSelector(map, view, { view.size.x, 0 }, { SIDEBAR_WIDTH, 200 }, 4, 2);
+	ts.draw({ view.size.x, 0 }, { SIDEBAR_WIDTH, SIDEBAR_WIDTH }, 20, 10);
 
 	//Debug
 	al_draw_textf(fn, al_map_rgb(255, 255, 255), 10, 10, 0, "undo stack size: %li", undo_stack.size());
 	al_draw_textf(fn, al_map_rgb(255, 255, 255), 10, 28, 0, "redo stack size: %li", redo_stack.size());
+	auto num_tiles = std::distance(map.it_visible_begin, map.v_tiles.end());
+	al_draw_textf(fn, al_map_rgb(255, 255, 255), 10, 46, 0, "tiles drawn: %i", (int)num_tiles);
+	auto size_of_tilearray = map.v_tiles.size();
+	al_draw_textf(fn, al_map_rgb(255, 255, 255), 10, 64, 0, "tilearray size: %i", (int)size_of_tilearray);
 }
 
 void EditorState::pushCommand(std::unique_ptr<Command> c)

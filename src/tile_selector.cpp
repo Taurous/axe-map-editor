@@ -1,18 +1,30 @@
 #include "tile_selector.hpp"
 
-void drawTileSelector(Map& m, View& v, vec2f pos, vec2f size, float padding, float bkg_padding)
+TileSelector::TileSelector(Map &map, View &view) : m(map), v(view)
 {
-	vec2f tsize, tscaled;
+	
+}
 
-	tsize.x = al_get_bitmap_width(m.getTilemapBitmap());
-	tsize.y = al_get_bitmap_height(m.getTilemapBitmap());
+void TileSelector::draw(vec2f pos, vec2f max_dim, float inset, float padding)
+{
+    vec2f tilemap_size, tilemap_scaled;
 
-    pos.x += padding;
-    pos.y += padding;
+	tilemap_size = m.tilemap->tile_size * m.tilemap->size;
 
-	tscaled.x = size.x-(padding*2);
-	tscaled.y = tsize.y * (tscaled.x / tsize.x);
+	// Scale horizontally first
+	tilemap_scaled.x = max_dim.x - (padding * 2) - (inset * 2);
+	tilemap_scaled.y = tilemap_size.y * (tilemap_scaled.x / tilemap_size.x);
 
-	al_draw_filled_rectangle(pos.x - bkg_padding, pos.y - bkg_padding, pos.x + tscaled.x + bkg_padding, pos.y + tscaled.y + bkg_padding, al_map_rgb(0, 0, 0));
-	al_draw_scaled_bitmap(m.getTilemapBitmap(), 0, 0, tsize.x, tsize.y, pos.x, pos.y, tscaled.x, tscaled.y, 0);
+	// If scaled tilemap height is greater than supplied max vertical dimension, scale down again to fit.
+	if (tilemap_scaled.y > max_dim.y)
+	{
+		tilemap_scaled.y = max_dim.y - (padding * 2) - (inset * 2);
+		tilemap_scaled.x = tilemap_size.x * (tilemap_scaled.y / tilemap_size.y);
+
+		// Center horizontally
+		pos.x += (max_dim.x / 2) - (tilemap_scaled.x / 2) - padding - inset;
+	}
+
+	al_draw_filled_rectangle(pos.x + inset, pos.y + inset, pos.x + tilemap_scaled.x + (padding * 2) + inset, pos.y + tilemap_scaled.y + (padding * 2) + inset, al_map_rgb(0, 0, 0));
+	al_draw_scaled_bitmap(m.getTilemapBitmap(), 0, 0, tilemap_size.x, tilemap_size.y, pos.x + padding + inset, pos.y + padding + inset, tilemap_scaled.x, tilemap_scaled.y, 0);
 }

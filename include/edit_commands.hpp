@@ -23,7 +23,8 @@ public:
 	}
 	void undo() override
 	{
-		m.insertTile(prev_t);
+		if (prev_t.id < 0) m.removeTile(prev_t.pos); // If previous tile is non positive that means it was empty, delete tile rather than place empty tile
+		else m.insertTile(prev_t);
 	}
 
 private:

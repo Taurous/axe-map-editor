@@ -2,6 +2,7 @@
 
 #include <tuple>
 #include <type_traits>
+#include <ostream>
 
 template <typename T> class vec2;
 
@@ -43,6 +44,13 @@ public:
 	friend bool operator>=(const vec2& lhs, const vec2& rhs) { return !(lhs < rhs); }
 	friend bool operator> (const vec2& lhs, const vec2& rhs) { return rhs < lhs; }
 	friend bool operator<=(const vec2& lhs, const vec2& rhs) { return !(rhs < lhs); }
+
+	//Stream
+	friend std::ostream& operator<<(std::ostream& os, const vec2& v)
+	{
+		os << "{" << v.x << "," << v.y << "}";
+		return os;
+	}
 
 	//Public data members
 	T x, y;
