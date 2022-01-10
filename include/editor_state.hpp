@@ -62,6 +62,7 @@ private:
 	bool dragging;
 	bool filling;
 	bool draw_grid;
+	bool draw_debug;
 
 	std::list<std::unique_ptr<Command>> redo_stack;
 	std::list<std::unique_ptr<Command>> undo_stack;

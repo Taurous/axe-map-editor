@@ -23,7 +23,7 @@ void resizeView(View &v)
 }
 
 EditorState::EditorState(StateMachine& state_machine, InputHandler& input)
-	: AbstractState(state_machine, input), fn(nullptr), ts(map, view), dragging(false), filling(false), draw_grid(true)
+	: AbstractState(state_machine, input), fn(nullptr), ts(map, view), dragging(false), filling(false), draw_grid(true), draw_debug(false)
 {
 	fn = al_load_font("resources/tex/Retro Gaming.ttf", 18, 0);
 
@@ -38,7 +38,7 @@ EditorState::EditorState(StateMachine& state_machine, InputHandler& input)
 
 EditorState::~EditorState()
 {
-
+	al_destroy_font(fn);
 }
 
 void EditorState::pause()
@@ -48,19 +48,20 @@ void EditorState::pause()
 
 void EditorState::resume()
 {
-	m_input.setKeybind(MOUSE::WHEELUP, 	std::bind(&EditorState::onMouseWheelUp, this));
-	m_input.setKeybind(MOUSE::WHEELDOWN, std::bind(&EditorState::onMouseWheelDown, this));
-	m_input.setKeybind(MOUSE::MIDDLE, 	std::bind(&EditorState::onMiddleMouseDown, this));
-	m_input.setKeybind(MOUSE::MIDDLE, 	std::bind(&EditorState::onMiddleMouseUp, this), false);
+	m_input.setKeybind(MOUSE::WHEELUP, 		std::bind(&EditorState::onMouseWheelUp, this));
+	m_input.setKeybind(MOUSE::WHEELDOWN,	std::bind(&EditorState::onMouseWheelDown, this));
+	m_input.setKeybind(MOUSE::MIDDLE, 		std::bind(&EditorState::onMiddleMouseDown, this));
+	m_input.setKeybind(MOUSE::MIDDLE, 		std::bind(&EditorState::onMiddleMouseUp, this), false);
 	m_input.setKeybind(MOUSE::LEFT, 		std::bind(&EditorState::onLeftMouseDown, this));
 	m_input.setKeybind(MOUSE::LEFT, 		std::bind(&EditorState::onLeftMouseUp, this), false);
-	m_input.setKeybind(MOUSE::RIGHT, 	std::bind(&EditorState::onRightMouseDown, this));
-	m_input.setKeybind(MOUSE::RIGHT, 	std::bind(&EditorState::onRightMouseUp, this), false);
-	m_input.setKeybind(ALLEGRO_KEY_G,			[&](){ draw_grid = !draw_grid; });
-	m_input.setKeybind(ALLEGRO_KEY_Z, 			std::bind(&EditorState::undo, this));
-	m_input.setKeybind(ALLEGRO_KEY_Y, 			std::bind(&EditorState::redo, this));
-	m_input.setKeybind(ALLEGRO_KEY_S, 			std::bind(&EditorState::saveMap, this));
-	m_input.setKeybind(ALLEGRO_KEY_L, 			std::bind(&EditorState::loadMap, this));
+	m_input.setKeybind(MOUSE::RIGHT, 		std::bind(&EditorState::onRightMouseDown, this));
+	m_input.setKeybind(MOUSE::RIGHT, 		std::bind(&EditorState::onRightMouseUp, this), false);
+	m_input.setKeybind(ALLEGRO_KEY_G,		[&](){ draw_grid = !draw_grid; });
+	m_input.setKeybind(ALLEGRO_KEY_Z, 		std::bind(&EditorState::undo, this));
+	m_input.setKeybind(ALLEGRO_KEY_Y, 		std::bind(&EditorState::redo, this));
+	m_input.setKeybind(ALLEGRO_KEY_S, 		std::bind(&EditorState::saveMap, this));
+	m_input.setKeybind(ALLEGRO_KEY_L, 		std::bind(&EditorState::loadMap, this));
+	m_input.setKeybind(ALLEGRO_KEY_F3,		[&](){ draw_debug = !draw_debug; });
 }
 
 void EditorState::handleEvents(const ALLEGRO_EVENT &ev)
@@ -101,6 +102,7 @@ void EditorState::draw()
 	// View Drawing, clipped
 
 	al_set_clipping_rectangle((int)view.screen_pos.x, (int)view.screen_pos.y, (int)view.size.x, (int)view.size.y);
+
 	map.draw(view, draw_grid);
 
 	if (filling)
@@ -133,12 +135,15 @@ void EditorState::draw()
 	ts.draw({ view.size.x, 0 }, { SIDEBAR_WIDTH, SIDEBAR_WIDTH }, 20, 10);
 
 	//Debug
-	al_draw_textf(fn, al_map_rgb(255, 255, 255), 10, 10, 0, "undo stack size: %li", undo_stack.size());
-	al_draw_textf(fn, al_map_rgb(255, 255, 255), 10, 28, 0, "redo stack size: %li", redo_stack.size());
-	auto num_tiles = std::distance(map.it_visible_begin, map.v_tiles.end());
-	al_draw_textf(fn, al_map_rgb(255, 255, 255), 10, 46, 0, "tiles drawn: %i", (int)num_tiles);
-	auto size_of_tilearray = map.v_tiles.size();
-	al_draw_textf(fn, al_map_rgb(255, 255, 255), 10, 64, 0, "tilearray size: %i", (int)size_of_tilearray);
+	if (draw_debug)
+	{
+		al_draw_textf(fn, al_map_rgb(255, 255, 255), 10, 10, 0, "undo stack size: %li", undo_stack.size());
+		al_draw_textf(fn, al_map_rgb(255, 255, 255), 10, 28, 0, "redo stack size: %li", redo_stack.size());
+		auto num_tiles = std::distance(map.it_visible_begin, map.v_tiles.end());
+		al_draw_textf(fn, al_map_rgb(255, 255, 255), 10, 46, 0, "tiles drawn: %i", (int)num_tiles);
+		auto size_of_tilearray = map.v_tiles.size();
+		al_draw_textf(fn, al_map_rgb(255, 255, 255), 10, 64, 0, "tilearray size: %i", (int)size_of_tilearray);
+	}
 }
 
 void EditorState::pushCommand(std::unique_ptr<Command> c)
