@@ -33,8 +33,7 @@ void drawLine(const View& v, const vec2f& v1, const vec2f& v2, const ALLEGRO_COL
 	vec2f new_v1 = worldToScreen(v1, v);
 	vec2f new_v2 = worldToScreen(v2, v);
 
-	//al_draw_line(new_v1.x, new_v1.y, new_v2.x, new_v2.y, cl, std::max(line_width * v.scale.x, 1.f));
-	al_draw_line(new_v1.x, new_v1.y, new_v2.x, new_v2.y, cl, line_width);
+	al_draw_line(new_v1.x, new_v1.y, new_v2.x, new_v2.y, cl, std::max(line_width * v.scale.x, 1.f));
 }
 
 void drawTriangle(const View& v, const vec2f& v1, const vec2f& v2, const vec2f v3, const ALLEGRO_COLOR& cl, float line_width)
@@ -43,8 +42,7 @@ void drawTriangle(const View& v, const vec2f& v1, const vec2f& v2, const vec2f v
 	vec2f new_v2 = worldToScreen(v2, v);
 	vec2f new_v3 = worldToScreen(v3, v);
 
-	//al_draw_triangle(new_v1.x, new_v1.y, new_v2.x, new_v2.y, new_v3.x, new_v3.y, cl, std::max(line_width * v.scale.x, 1.f));
-	al_draw_triangle(new_v1.x, new_v1.y, new_v2.x, new_v2.y, new_v3.x, new_v3.y, cl, line_width);
+	al_draw_triangle(new_v1.x, new_v1.y, new_v2.x, new_v2.y, new_v3.x, new_v3.y, cl, std::max(line_width * v.scale.x, 1.f));
 }
 
 void drawFilledTriangle(const View& v, const vec2f& v1, const vec2f& v2, const vec2f v3, const ALLEGRO_COLOR& cl)
@@ -61,8 +59,7 @@ void drawRectangle(const View& v, const vec2f& tl, const vec2f& br, const ALLEGR
 	vec2f new_tl = worldToScreen(tl, v);
 	vec2f new_br = worldToScreen(br, v);
 
-	//al_draw_rectangle(new_tl.x, new_tl.y, new_br.x, new_br.y, cl, std::max(line_width * v.scale.x, 1.f));
-	al_draw_rectangle(new_tl.x, new_tl.y, new_br.x, new_br.y, cl, line_width);
+	al_draw_rectangle(new_tl.x, new_tl.y, new_br.x, new_br.y, cl, std::max(line_width * v.scale.x, 1.f));
 }
 
 void drawFilledRectangle(const View& v, const vec2f& tl, const vec2f& br, const ALLEGRO_COLOR& cl)
@@ -77,8 +74,7 @@ void drawCircle(const View& v, const vec2f& c, const float& r, const ALLEGRO_COL
 {
 	vec2f new_c = worldToScreen(c, v);
 
-	//al_draw_circle(new_c.x, new_c.y, r * v.scale.x, cl, std::max(line_width * v.scale.x, 1.f));
-	al_draw_circle(new_c.x, new_c.y, r*v.scale.x, cl, line_width);
+	al_draw_circle(new_c.x, new_c.y, r * v.scale.x, cl, std::max(line_width * v.scale.x, 1.f));
 }
 
 void drawFilledCircle(const View& v, const vec2f& c, const float& r, const ALLEGRO_COLOR& cl)

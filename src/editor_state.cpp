@@ -1,6 +1,8 @@
 #include <iostream>
 #include <math.h>
 #include <functional>
+#include <sstream>
+#include <allegro5/allegro_color.h>
 
 #include "editor_state.hpp"
 
@@ -12,14 +14,14 @@ constexpr int SIDEBAR_WIDTH = 256;
 constexpr int BOTTOM_BAR_HEIGHT = 40;
 constexpr size_t UNDO_STACK_LIMIT = 50;
 
-constexpr bool SAVE_VIEW = false;
+constexpr bool SAVE_VIEW = true;
 
 void resizeView(View &v)
 {
 	vec2f screen_size = getScreenSize();
 
-	v.size.x = screen_size.x - SIDEBAR_WIDTH;
-	v.size.y = screen_size.y - BOTTOM_BAR_HEIGHT;
+	v.size.x = screen_size.x - SIDEBAR_WIDTH - 4;
+	v.size.y = screen_size.y - BOTTOM_BAR_HEIGHT - 4;
 }
 
 EditorState::EditorState(StateMachine& state_machine, InputHandler& input)
@@ -27,23 +29,71 @@ EditorState::EditorState(StateMachine& state_machine, InputHandler& input)
 {
 	fn = al_load_font("resources/tex/Retro Gaming.ttf", 18, 0);
 
+	current_bmp = 0;
+	elapsed = 0;
+
+	std::stringstream ss;
+	int row = 1;
+	int col = 1;
+	while (true)
+	{
+		ss.str("");
+		ALLEGRO_BITMAP *b = nullptr;
+
+		ss << "/home/aksel/Downloads/split/lvl1_lg_" << row << "_" << col << ".png";
+		b = al_load_bitmap(ss.str().c_str());
+
+		if (b != nullptr)
+		{
+			++col;
+			background_bitmaps.push_back(b);
+			continue;
+		}
+		else if (col > 1)
+		{
+			col = 1;
+			++row;
+			continue;
+		}
+		
+		std::cout << "Loaded " << background_bitmaps.size() << " bitmaps!" << std::endl;
+
+		break;
+	}
+
 	view.world_pos = { 0.f, 0.f };
-	view.screen_pos = { 0.f, 0.f };
+	view.screen_pos = { 2.f, 2.f };
 	view.scale = { 1.f, 1.f };
 
 	resizeView(view);
 
-	map.create("resources/tex/Dark_lvl0R.png", { 64, 64 });
+	map.create("resources/tex/black_tile.png", { 100, 100 });
 }
 
 EditorState::~EditorState()
 {
+	for (ALLEGRO_BITMAP *e : background_bitmaps)
+	{
+		if (e) al_destroy_bitmap(e);
+	}
+
 	al_destroy_font(fn);
 }
 
 void EditorState::pause()
 {
-
+	m_input.clearKeybind(MOUSE::WHEELUP);
+	m_input.clearKeybind(MOUSE::WHEELDOWN);
+	m_input.clearKeybind(MOUSE::MIDDLE);
+	m_input.clearKeybind(MOUSE::LEFT);
+	m_input.clearKeybind(MOUSE::RIGHT);
+	m_input.clearKeybind(ALLEGRO_KEY_G);
+	m_input.clearKeybind(ALLEGRO_KEY_Z);
+	m_input.clearKeybind(ALLEGRO_KEY_Y);
+	m_input.clearKeybind(ALLEGRO_KEY_S);
+	m_input.clearKeybind(ALLEGRO_KEY_L);
+	m_input.clearKeybind(ALLEGRO_KEY_F3);
+	m_input.clearKeybind(ALLEGRO_KEY_C);
 }
 
 void EditorState::resume()
@@ -62,6 +112,7 @@ void EditorState::resume()
 	m_input.setKeybind(ALLEGRO_KEY_S, 		std::bind(&EditorState::saveMap, this));
 	m_input.setKeybind(ALLEGRO_KEY_L, 		std::bind(&EditorState::loadMap, this));
 	m_input.setKeybind(ALLEGRO_KEY_F3,		[&](){ draw_debug = !draw_debug; });
+	m_input.setKeybind(ALLEGRO_KEY_C,		[&](){ if (m_input.isModifierDown(ALLEGRO_KEYMOD_CTRL)) view.world_pos = { 0, 0 }; });
 }
 
 void EditorState::handleEvents(const ALLEGRO_EVENT &ev)
@@ -75,6 +126,15 @@ void EditorState::handleEvents(const ALLEGRO_EVENT &ev)
 
 void EditorState::update(float delta_time)
 {
+	elapsed += delta_time;
+
+	if (elapsed >= 2.f)
+	{
+		elapsed -= 2.f;
+		current_bmp++;
+		if (current_bmp >= background_bitmaps.size()) current_bmp = 0;
+	}
+
 	if (!m_input.isMouseDown(MOUSE::MIDDLE) && map.isEditable())
 	{
 		vec2f direction{ 0,0 };
@@ -103,6 +163,8 @@ void EditorState::draw()
 
 	al_set_clipping_rectangle((int)view.screen_pos.x, (int)view.screen_pos.y, (int)view.size.x, (int)view.size.y);
 
+	drawBitmap(view, background_bitmaps[3], {0, 0}, 0);
+
 	map.draw(view, draw_grid);
 
 	if (filling)
@@ -119,30 +181,37 @@ void EditorState::draw()
 
 		drawRectangle(view, t_start_fill, t_end_fill + map.tilemap->tile_size, al_map_rgb(255, 0, 0), 1);
 	}
+
 	al_reset_clipping_rectangle();
+
+	al_draw_rectangle(view.screen_pos.x, view.screen_pos.y, view.screen_pos.x + view.size.x, view.screen_pos.y + view.size.y, al_color_html("#f39c12"), 4);
 
 	//Draw UI
 
 	vec2f screen_dim = getScreenSize();
+	
+	al_draw_filled_rectangle(screen_dim.x - SIDEBAR_WIDTH, 0, screen_dim.x, screen_dim.y - BOTTOM_BAR_HEIGHT, al_color_html("#e67e22"));
 
-	al_draw_filled_rectangle(view.size.x, 0, screen_dim.x, screen_dim.y, al_map_rgb(64, 64, 64));
-	al_draw_filled_rectangle(0, screen_dim.y - BOTTOM_BAR_HEIGHT, view.size.x, screen_dim.y, al_map_rgb(64, 64, 64));
+	al_draw_filled_rectangle(0, screen_dim.y - BOTTOM_BAR_HEIGHT, screen_dim.x, screen_dim.y, al_color_html("#d35400"));
+
 	vec2f cur_mouse_pos = screenToWorld(m_input.getMousePos(), view);
 	al_draw_textf(fn, al_map_rgb(0, 0, 0), 16, screen_dim.y - (BOTTOM_BAR_HEIGHT / 2) - 10, 0, "%i:%i",
 		(int)floor(cur_mouse_pos.x / map.tilemap->tile_size.x), (int)floor(cur_mouse_pos.y / map.tilemap->tile_size.y));
 
 	// Tilemap selection
-	ts.draw({ view.size.x, 0 }, { SIDEBAR_WIDTH, SIDEBAR_WIDTH }, 20, 10);
+	ts.draw({ screen_dim.x - SIDEBAR_WIDTH, 0 }, { SIDEBAR_WIDTH, SIDEBAR_WIDTH }, 20, 10);
 
 	//Debug
 	if (draw_debug)
 	{
+		auto num_tiles = std::distance(map.it_visible_begin, map.v_tiles.end());
+		auto size_of_tilearray = map.v_tiles.size();
+
 		al_draw_textf(fn, al_map_rgb(255, 255, 255), 10, 10, 0, "undo stack size: %li", undo_stack.size());
 		al_draw_textf(fn, al_map_rgb(255, 255, 255), 10, 28, 0, "redo stack size: %li", redo_stack.size());
-		auto num_tiles = std::distance(map.it_visible_begin, map.v_tiles.end());
 		al_draw_textf(fn, al_map_rgb(255, 255, 255), 10, 46, 0, "tiles drawn: %i", (int)num_tiles);
-		auto size_of_tilearray = map.v_tiles.size();
 		al_draw_textf(fn, al_map_rgb(255, 255, 255), 10, 64, 0, "tilearray size: %i", (int)size_of_tilearray);
+		al_draw_textf(fn, al_map_rgb(255, 255, 255), 10, 82, 0, "view world position: (%.2f, %.2f)", view.world_pos.x, view.world_pos.y);
 	}
 }
 

@@ -68,4 +68,8 @@ private:
 	std::list<std::unique_ptr<Command>> undo_stack;
 
 	void pushCommand(std::unique_ptr<Command> c);
+
+	std::vector<ALLEGRO_BITMAP*> background_bitmaps;
+	int current_bmp;
+	float elapsed;
 };

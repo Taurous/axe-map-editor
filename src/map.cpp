@@ -51,8 +51,11 @@ void Map::draw(const View& v, bool grid)
 		vec2f off((float)vis_tl.x * ts.x, (float)vis_tl.y * ts.y);
 		off = worldToScreen(off, v);
 
-		for (float x = off.x; x < v.size.x; x += ts.x * v.scale.x)al_draw_line(x, v.screen_pos.y, x, v.screen_pos.y + v.size.y, al_map_rgb(60, 60, 60), 1);
-		for (float y = off.y; y < v.size.y; y += ts.y * v.scale.y)al_draw_line(v.screen_pos.x, y, v.screen_pos.x + v.size.x, y, al_map_rgb(60, 60, 60), 1);
+		for (float x = off.x; x < v.screen_pos.x + v.size.x; x += ts.x * v.scale.x)
+			al_draw_line(x, v.screen_pos.y, x, v.screen_pos.y + v.size.y, al_map_rgb(60, 60, 60), 1);
+
+		for (float y = off.y; y < v.screen_pos.y + v.size.y; y += ts.y * v.scale.y)
+			al_draw_line(v.screen_pos.x, y, v.screen_pos.x + v.size.x, y, al_map_rgb(60, 60, 60), 1);
 	}
 }
 
@@ -251,7 +254,7 @@ bool Map::load(std::string file, View &v, bool restore_view)
 	</Map>
 	*/
 
-	//Array of error just do I don't have to keep instatiating XMLError objects
+	//Array of error just so I don't have to keep instatiating XMLError objects
 	xml::XMLError res[4];
 	std::fill_n(res, 4, xml::XML_SUCCESS);
 	auto failure = [](const std::string& e)
