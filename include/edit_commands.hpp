@@ -1,65 +1,30 @@
 #pragma once
 
 #include <vector>
+#include <memory>
 
 #include "command.hpp"
 
 #include "vec.hpp"
 #include "map.hpp"
 
-class InsertTileCommand : public Command
+class SetTileCommand : public Command
 {
 public:
-	InsertTileCommand(Map& map, Tile tile) : m(map), t(tile)
-	{
-		prev_t.id = m.getTile(t.pos).id;
-		prev_t.pos = t.pos;
-		redo();
-	}
-
-	void redo() override
-	{
-		m.insertTile(t);
-	}
-	void undo() override
-	{
-		if (prev_t.id < 0) m.removeTile(prev_t.pos); // If previous tile is non positive that means it was empty, delete tile rather than place empty tile
-		else m.insertTile(prev_t);
-	}
+	SetTileCommand(Map& map, vec2i position, bool show) : m(map), p(position), s(show) { redo(); }
+	void redo() override { setTile(m, p, s); }
+	void undo() override { setTile(m, p, !s); }
 
 private:
 	Map& m;
-	Tile t;
-	Tile prev_t;
-};
-
-class RemoveTileCommand : public Command
-{
-public:
-	RemoveTileCommand(Map& map, vec2i pos) : m(map)
-	{
-		t = m.getTile(pos);
-		redo();
-	}
-
-	void redo() override
-	{
-		m.removeTile(t.pos);
-	}
-	void undo() override
-	{
-		m.insertTile(t);
-	}
-
-private:
-	Map& m;
-	Tile t;
+	vec2i p;
+	bool s;
 };
 
 class FillTileCommand : public Command
 {
 public:
-	FillTileCommand(Map& map, int tex_id, vec2i start_fill, vec2i end_fill) : m(map), t_id(tex_id), s_fill(start_fill), e_fill(end_fill)
+	FillTileCommand(Map& map, bool show, vec2i start_fill, vec2i end_fill) : m(map), show(show), s_fill(start_fill), e_fill(end_fill)
 	{
 		vec2i t_start_fill, t_end_fill;
 
@@ -72,7 +37,7 @@ public:
 		{
 			for (int y = t_start_fill.y; y <= t_end_fill.y; ++y)
 			{
-				cmds.push_back(std::make_unique<InsertTileCommand>(m, Tile{ t_id, {x, y} }));
+				cmds.push_back(std::make_unique<SetTileCommand>(m, vec2i{x, y}, show));
 			}
 		}
 	}
@@ -94,9 +59,9 @@ public:
 
 private:
 	Map& m;
-	int t_id;
+	bool show;
 	vec2i s_fill;
 	vec2i e_fill;
 
-	std::vector<std::unique_ptr<InsertTileCommand> > cmds;
+	std::vector<std::unique_ptr<SetTileCommand> > cmds;
 };

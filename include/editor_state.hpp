@@ -9,15 +9,7 @@
 
 #include "view.hpp"
 #include "map.hpp"
-#include "tile_selector.hpp"
 #include "edit_commands.hpp"
-
-enum PLACER
-{
-	TILE,
-	WALL,
-	OBJECT
-};
 
 class EditorState : public AbstractState
 {
@@ -33,9 +25,12 @@ public:
 	void update(float delta_time) override;
 	void draw() override;
 
-	void saveMap();
-	void loadMap();
-
+	//Keybound Functions
+	void save();
+	void load();
+	void undo();
+	void redo();
+	
 	void onMouseWheelUp();
 	void onMouseWheelDown();
 	void onMiddleMouseUp();
@@ -45,15 +40,11 @@ public:
 	void onRightMouseDown();
 	void onRightMouseUp();
 
-	void undo();
-	void redo();
-
 private:
 	ALLEGRO_FONT* fn;
 
 	View view;
 	Map map;
-	TileSelector ts;
 
 	vec2f last_pos;
 	vec2f mouse_pos;
@@ -68,8 +59,4 @@ private:
 	std::list<std::unique_ptr<Command>> undo_stack;
 
 	void pushCommand(std::unique_ptr<Command> c);
-
-	std::vector<ALLEGRO_BITMAP*> background_bitmaps;
-	int current_bmp;
-	float elapsed;
 };

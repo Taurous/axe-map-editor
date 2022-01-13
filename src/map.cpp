@@ -12,173 +12,84 @@
 
 namespace xml = tinyxml2;
 
-Map::Map() : editable(false)
+bool createMap(Map& m, std::string path, int ts)
 {
-	it_visible_begin = v_tiles.begin();
-	tilemap = std::unique_ptr<Tilemap>(new Tilemap);
-}
-
-Map::~Map()
-{
-	destroyTilemap(tilemap.release());
-}
-
-void Map::draw(const View& v, bool grid)
-{
-	vec2f ts = tilemap->tile_size;
-	ALLEGRO_BITMAP* target = tilemap->bmp;
-
-	if (target)
+	if (m.bmp != nullptr)
 	{
-		al_hold_bitmap_drawing(true);
-		for (std::vector<Tile>::iterator it = it_visible_begin; it != v_tiles.end(); ++it)
-		{
-			vec2f tilemap_pos((*it).id % (int)tilemap->size.x, (*it).id / (int)tilemap->size.x);
-			vec2f map_pos = (*it).pos;
-			map_pos *= ts;
-
-			drawBitmapRegion(v, target, tilemap_pos * ts, ts, map_pos, 0);
-		}
-		al_hold_bitmap_drawing(false);
+		std::cerr << "Map: " << path << " already loaded." << std::endl;
+		return true;
 	}
 
-	if (grid)
+	m.bmp = nullptr;
+	m.width = 0;
+	m.height = 0;
+	m.path = path;
+	m.tile_size = ts;
+
+	m.bmp = al_load_bitmap(m.path.c_str());
+
+	if (!m.bmp)
 	{
-		vec2i vis_tl, vis_br;
-
-		getVisibleTileRect(v, vis_tl, vis_br);
-
-		vec2f off((float)vis_tl.x * ts.x, (float)vis_tl.y * ts.y);
-		off = worldToScreen(off, v);
-
-		for (float x = off.x; x < v.screen_pos.x + v.size.x; x += ts.x * v.scale.x)
-			al_draw_line(x, v.screen_pos.y, x, v.screen_pos.y + v.size.y, al_map_rgb(60, 60, 60), 1);
-
-		for (float y = off.y; y < v.screen_pos.y + v.size.y; y += ts.y * v.scale.y)
-			al_draw_line(v.screen_pos.x, y, v.screen_pos.x + v.size.x, y, al_map_rgb(60, 60, 60), 1);
+		std::cerr << "Failed to load map: " << m.path << std::endl;
+		return false;
 	}
+
+	m.width = al_get_bitmap_width(m.bmp) / m.tile_size;
+	m.height = al_get_bitmap_height(m.bmp) / m.tile_size;
+
+	m.v_tiles.resize(m.width * m.height, false);
+
+	std::cout << "createMap(m, " << path << ", " << ts << ") results:" << "\n\tWidth: " << m.width << "\n\tHeight: " << m.height
+		<< "\n\tTile Size: " << m.tile_size << "\n\tv_tiles.size(): " << (unsigned int)m.v_tiles.size() << std::endl;
+
+	return true;
 }
 
-void Map::sortMapVisibilty(const View& v)
+void clearMap(Map& m)
+{
+	if (m.bmp)
+	{
+		al_destroy_bitmap(m.bmp);
+		m.bmp = nullptr;
+	}
+
+	m.width = 0;
+	m.height = 0;
+	m.path = "";
+	m.tile_size = 0;
+
+	m.v_tiles.clear();
+}
+
+bool reloadMap(Map& m)
+{
+	if (m.bmp)
+	{
+		al_destroy_bitmap(m.bmp);
+		m.bmp = nullptr;
+	}
+
+	return createMap(m, m.path, m.tile_size);
+}
+
+bool saveMap(const Map& m, std::string file, const View& v)
 {
 	/*
-	* Map Visibilty Sort
-	* Sort all visible tiles to end of vector
-	* 'it_visible_begin' will point to first visible element
-	*/
-
-	auto pred = [this, &v](const Tile& t)
-	{
-		vec2i vis_tl, vis_br;
-
-		getVisibleTileRect(v, vis_tl, vis_br);
-
-		vec2f ft(t.pos);
-
-		return !(ft.x >= vis_tl.x && ft.x <= vis_br.x && ft.y >= vis_tl.y && ft.y <= vis_br.y);
-	};
-
-	it_visible_begin = std::partition(v_tiles.begin(), v_tiles.end(), pred);
-}
-
-void Map::getVisibleTileRect(const View& v, vec2i& tl, vec2i& br)
-{
-	vec2f ts = tilemap->tile_size;
-	tl.x = (int)floor((v.world_pos.x - (v.size.x / 2 / v.scale.x)) / ts.x);
-	tl.y = (int)floor((v.world_pos.y - (v.size.y / 2 / v.scale.y)) / ts.y);
-
-	br.x = (int)floor((v.world_pos.x + (v.size.x / 2 / v.scale.x)) / ts.x);
-	br.y = (int)floor((v.world_pos.y + (v.size.y / 2 / v.scale.y)) / ts.y);
-}
-
-void Map::setTilemap(std::string path, vec2i tile_size)
-{
-	destroyTilemap(tilemap.release());
-	tilemap.reset(loadTilemap(path, tile_size));
-}
-
-ALLEGRO_BITMAP* Map::getTilemapBitmap()
-{
-	return tilemap->bmp;
-}
-
-void Map::insertTile(Tile t)
-{
-	auto e = std::find_if(v_tiles.begin(), v_tiles.end(), [&t](Tile v_t) {return (v_t.pos == t.pos); });
-
-	if (e == v_tiles.end())
-	{
-		// Tile does not exist, add to end of vector
-		v_tiles.push_back(t);
-	}
-	else
-	{
-		//Tile exists, overwrite with new tile
-		(*e) = t;
-	}
-}
-
-void Map::removeTile(const vec2i& p)
-{
-	//Temp fix, look through all tiles to remove, if undoing tile placement that is not visible, would be skipped
-	//auto e = std::find_if(it_visible_begin, v_tiles.end(), [&p](Tile v_t) {return (v_t.pos == p); });
-	auto e = std::find_if(v_tiles.begin(), v_tiles.end(), [&p](Tile v_t) {return (v_t.pos == p); });
-
-	if (e != v_tiles.end())
-	{
-		v_tiles.erase(e);
-	}
-}
-
-vec2i Map::getTilePos(const View& v, const vec2f& screen_pos)
-{
-	vec2f p = screenToWorld(screen_pos, v);
-	vec2i n;
-
-	n.x = (int)floor(p.x / tilemap->tile_size.x);
-	n.y = (int)floor(p.y / tilemap->tile_size.y);
-
-	return n;
-}
-
-Tile Map::getTile(const vec2i& p)
-{
-	Tile t;
-	t.pos = p;
-
-	auto e = std::find_if(v_tiles.begin(), v_tiles.end(), [&t](Tile v_t) {return (v_t.pos == t.pos); });
-
-	if (e == v_tiles.end())
-	{
-		// Tile does not exist, return default tile -1
-		return Tile{ -1, {0, 0} };
-	}
-	else
-	{
-		//Tile exists
-		return (*e);
-	}
-}
-
-bool Map::save(std::string file, const View& v)
-{
-	/* XML STRUCTURE
+	 XML STRUCTURE
 	<Map>
 		<View>
 			<Position x="float" y="float"/>
 			<Scale x="float" y="float"/>
 		</View>
-		<Tilemap>
-			<Path>string</Path>
-			<TileSize x="int" y="int"/>
-		</Tilemap>
+
 		<Tiles total="int">
 			<Tile textureid="int">
 				<Position x="int" y="int"/>
 			</Tile>
 		</Tiles>
+
 	</Map>
-	*/
+	
 
 	xml::XMLDocument saveFile;
 	xml::XMLNode* root = saveFile.NewElement("Map");
@@ -195,17 +106,6 @@ bool Map::save(std::string file, const View& v)
 	viewElement->InsertEndChild(viewPositionElement);
 	viewElement->InsertEndChild(viewScaleElement);
 	root->InsertEndChild(viewElement);
-
-	//Save Tilemap Data
-	xml::XMLElement* tilemapElement = saveFile.NewElement("Tilemap");
-	xml::XMLElement* tilemapPathElement = saveFile.NewElement("Path");
-	tilemapPathElement->SetText(tilemap->path.c_str());
-	xml::XMLElement* tilemapSizeElement = saveFile.NewElement("TileSize");
-	tilemapSizeElement->SetAttribute("x", tilemap->tile_size.x);
-	tilemapSizeElement->SetAttribute("y", tilemap->tile_size.y);
-	tilemapElement->InsertEndChild(tilemapPathElement);
-	tilemapElement->InsertEndChild(tilemapSizeElement);
-	root->InsertEndChild(tilemapElement);
 
 	//Dump Tiles into XML
 	xml::XMLElement* tileTagElement = saveFile.NewElement("Tiles");
@@ -232,11 +132,14 @@ bool Map::save(std::string file, const View& v)
 	}
 
 	return true;
+	*/
+	return false;
 }
 
-bool Map::load(std::string file, View &v, bool restore_view)
+bool loadMap(Map& m, std::string file, View &v, bool restore_view)
 {
-	/* XML STRUCTURE
+	/*
+	 XML STRUCTURE
 	<Map>
 		<View>
 			<Position x="float" y="float"/>
@@ -252,7 +155,7 @@ bool Map::load(std::string file, View &v, bool restore_view)
 			</Tile>
 		</Tiles>
 	</Map>
-	*/
+	
 
 	//Array of error just so I don't have to keep instatiating XMLError objects
 	xml::XMLError res[4];
@@ -367,12 +270,80 @@ bool Map::load(std::string file, View &v, bool restore_view)
 		return true;
 	}
 	else return failure("Tile data is corrupt!");
+	*/
+	return false;
 }
 
-void Map::create(std::string tilemap_path, vec2i tile_size)
+void drawMap(const Map& m, const View& v, bool draw_grid)
 {
-	v_tiles.clear();
-	it_visible_begin = v_tiles.begin();
-	setTilemap(tilemap_path, tile_size);
-	if (tilemap) editable = true;
+	/*al_hold_bitmap_drawing(true);
+
+	
+
+	al_hold_bitmap_drawing(false);*/
+
+	vec2i vis_tl, vis_br;
+	getVisibleTileRect(m, v, vis_tl, vis_br);
+
+	if (draw_grid)
+	{
+		vec2f off((float)vis_tl.x * m.tile_size, (float)vis_tl.y * m.tile_size);
+		off = worldToScreen(off, v);
+
+		for (float x = off.x; x < v.screen_pos.x + v.size.x; x += m.tile_size * v.scale.x)
+			al_draw_line(x, v.screen_pos.y, x, v.screen_pos.y + v.size.y, al_map_rgb(60, 60, 60), 1);
+
+		for (float y = off.y; y < v.screen_pos.y + v.size.y; y += m.tile_size * v.scale.y)
+			al_draw_line(v.screen_pos.x, y, v.screen_pos.x + v.size.x, y, al_map_rgb(60, 60, 60), 1);
+	}
 }
+
+void hideTile(Map &m, const vec2i& p)
+{
+	setTile(m, p, false);
+}
+void showTile(Map &m, const vec2i& p)
+{
+	setTile(m, p, true);
+}
+void setTile(Map &m, const vec2i& p, bool show)
+{
+	if (p.x >= 0 && p.x < m.width && p.y >= 0 && p.y < m.height)
+	{
+		int index = p.y * m.width + p.x;
+
+		m.v_tiles[index] = show;
+	}
+}
+bool isTileShown(const Map& m, const vec2i& p)
+{
+	if (p.x >= 0 && p.x < m.width && p.y >= 0 && p.y < m.height)
+	{
+		int index = p.y * m.width + p.x;
+
+		return m.v_tiles[index];
+	}
+
+	return false;
+}
+void getVisibleTileRect(const Map& m, const View& v, vec2i& tl, vec2i& br)
+{
+	tl.x = (int)floor((v.world_pos.x - (v.size.x / 2 / v.scale.x)) / m.tile_size);
+	tl.y = (int)floor((v.world_pos.y - (v.size.y / 2 / v.scale.y)) / m.tile_size);
+
+	br.x = (int)floor((v.world_pos.x + (v.size.x / 2 / v.scale.x)) / m.tile_size);
+	br.y = (int)floor((v.world_pos.y + (v.size.y / 2 / v.scale.y)) / m.tile_size);
+}
+
+vec2i getTilePos(const Map& m, const View& v, const vec2f& screen_pos)
+{
+	vec2f p = screenToWorld(screen_pos, v);
+	vec2i n;
+
+	n.x = (int)floor(p.x / m.tile_size);
+	n.y = (int)floor(p.y / m.tile_size);
+
+	return n;
+}
+
+
