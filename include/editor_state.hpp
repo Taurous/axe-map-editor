@@ -58,6 +58,7 @@ private:
 	bool dragging;
 	bool filling;
 	bool show_hidden;
+	bool saved;
 	bool draw_grid;
 	bool draw_debug;
 

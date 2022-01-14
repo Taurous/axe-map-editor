@@ -81,6 +81,7 @@ void drawMap(const Map& m, const View& v, bool draw_grid, bool show_hidden)
 	getVisibleTileRect(m, v, vis_tl, vis_br);
 
 	al_hold_bitmap_drawing(true);
+	char back_col = 18;
 
 	for (int x = vis_tl.x; x <= vis_br.x; ++x)
 	{
@@ -88,6 +89,12 @@ void drawMap(const Map& m, const View& v, bool draw_grid, bool show_hidden)
 		{
 			if (m.v_tiles[y * m.width + x]) drawBitmapRegion(v, m.bmp, vec2f{x * m.tile_size, y * m.tile_size}, vec2f{m.tile_size, m.tile_size}, vec2f{x * m.tile_size, y * m.tile_size}, 0);
 			else if (show_hidden) drawTintedBitmapRegion(v, m.bmp, vec2f{x * m.tile_size, y * m.tile_size}, vec2f{m.tile_size, m.tile_size}, vec2f{x * m.tile_size, y * m.tile_size}, al_map_rgba(100, 100, 100, 100), 0);
+			else
+			{
+				vec2f top_left {x * m.tile_size, y * m.tile_size};
+				vec2f bottom_right = top_left + vec2f{m.tile_size, m.tile_size};
+				drawFilledRectangle(v, top_left, bottom_right, al_map_rgb(back_col, back_col, back_col));
+			}
 		}
 	}
 

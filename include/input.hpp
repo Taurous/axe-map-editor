@@ -48,7 +48,7 @@ public:
 	vec2f getMousePos() const;
 	bool isMouseInWindow() const;
 
-	void setKeybind(int key, std::function<void(void)> callback, bool pressed = true);
+	void setKeybind(int key, std::function<void(void)> callback, bool onPressed = true);
 	void clearKeybind(int key);
 	void callKeybind(int key, bool pressed);
 	

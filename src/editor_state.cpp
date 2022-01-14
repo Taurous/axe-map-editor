@@ -25,9 +25,9 @@ void resizeView(View &v)
 }
 
 EditorState::EditorState(StateMachine& state_machine, InputHandler& input)
-	: AbstractState(state_machine, input), fn(nullptr), dragging(false), filling(false), show_hidden(false), draw_grid(true), draw_debug(false)
+	: AbstractState(state_machine, input), fn(nullptr), dragging(false), filling(false), show_hidden(false), saved(true), draw_grid(true), draw_debug(false)
 {
-	fn = al_load_font("resources/tex/Retro Gaming.ttf", 18, 0);
+	fn = al_load_font("resources/tex/Retro Gaming.ttf", 22, 0);
 
 	createMap(map, "/home/aksel/Downloads/Maps of the Mad Mage-20220114T044344Z-001/Maps of the Mad Mage/L1_grid.jpg", 100);
 
@@ -169,25 +169,42 @@ void EditorState::draw()
 	//Draw UI
 
 	vec2f screen_dim = getScreenSize();
+	vec2i world_tile = view.world_pos / vec2f{map.tile_size, map.tile_size};
 
 	al_draw_filled_rectangle(0, screen_dim.y - BOTTOM_BAR_HEIGHT, screen_dim.x, screen_dim.y, al_color_html("#d35400"));
 
-	vec2f cur_mouse_pos = screenToWorld(m_input.getMousePos(), view);
-
-	al_draw_textf(fn, al_map_rgb(0, 0, 0), 16, screen_dim.y - (BOTTOM_BAR_HEIGHT / 2) - 10, 0, "%i:%i",
-		(int)floor(cur_mouse_pos.x / map.tile_size), (int)floor(cur_mouse_pos.y / map.tile_size));
+	al_draw_textf(fn, al_map_rgb(0, 0, 0), 100, screen_dim.y - (BOTTOM_BAR_HEIGHT / 2), ALLEGRO_ALIGN_CENTER, "Mouse: %i:%i",
+		last_tile_hovered.x, last_tile_hovered.y);
+	al_draw_textf(fn, al_map_rgb(0, 0, 0), 280, screen_dim.y - (BOTTOM_BAR_HEIGHT / 2), ALLEGRO_ALIGN_CENTER, "View: %i:%i",
+		world_tile.x, world_tile.y);
+	if (!saved) al_draw_text(fn, al_map_rgb(255, 255, 255), screen_dim.x - 64, screen_dim.y - (BOTTOM_BAR_HEIGHT / 2), ALLEGRO_ALIGN_CENTER, "*");
 
 	//Debug
 	if (draw_debug)
 	{
 		al_draw_textf(fn, al_map_rgb(255, 255, 255), 10, 10, 0, "undo stack size: %li", undo_stack.size());
 		al_draw_textf(fn, al_map_rgb(255, 255, 255), 10, 28, 0, "redo stack size: %li", redo_stack.size());
-		al_draw_textf(fn, al_map_rgb(255, 255, 255), 10, 82, 0, "view world position: (%.2f, %.2f)", view.world_pos.x, view.world_pos.y);
 	}
+
+	/* Draw reticle in center of view
+
+	al_draw_line(view.screen_pos.x + (view.size.x / 2.f) - 8,
+	view.screen_pos.y + (view.size.y / 2.f),
+	view.screen_pos.x + (view.size.x / 2.f) + 8,
+	view.screen_pos.y + (view.size.y / 2.f),
+	al_map_rgb(255, 0, 0), 2);
+
+	al_draw_line(view.screen_pos.x + (view.size.x / 2.f),
+	view.screen_pos.y + (view.size.y / 2.f) - 8,
+	view.screen_pos.x + (view.size.x / 2.f),
+	view.screen_pos.y + (view.size.y / 2.f) + 8,
+	al_map_rgb(255, 0, 0), 2);
+	*/
 }
 
 void EditorState::pushCommand(std::unique_ptr<Command> c)
 {
+	saved = false;
 	undo_stack.push_back(std::move(c));
 
 	redo_stack.clear();
@@ -277,7 +294,7 @@ void EditorState::save()
 {
 	if (m_input.isModifierDown(ALLEGRO_KEYMOD_CTRL))
 	{
-		saveMap(map, "mapdata/data.xml", view);
+		if (saveMap(map, "mapdata/data.xml", view)) saved = true;
 	}
 }
 void EditorState::load()
@@ -288,6 +305,7 @@ void EditorState::load()
 		{
 			undo_stack.clear();
 			redo_stack.clear();
+			saved = true;
 		}
 	}
 }
