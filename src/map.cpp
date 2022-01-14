@@ -293,12 +293,12 @@ void drawMap(const Map& m, const View& v, bool draw_grid)
 
 	if (draw_grid)
 	{
-		for (int x = vis_tl.x; x <= vis_br.x; ++x)
+		for (int x = vis_tl.x; x <= vis_br.x + 1; ++x)
 		{
 			drawLine(v, {x * m.tile_size, vis_tl.y * m.tile_size}, {x * m.tile_size, vis_br.y * m.tile_size + m.tile_size}, al_map_rgb(40, 40, 40), 1);
 		}
 
-		for (int y = vis_tl.y; y <= vis_br.y; ++y)
+		for (int y = vis_tl.y; y <= vis_br.y + 1; ++y)
 		{
 			drawLine(v, {vis_tl.x * m.tile_size, y * m.tile_size}, {vis_br.x * m.tile_size + m.tile_size, y * m.tile_size}, al_map_rgb(40, 40, 40), 1);
 		}

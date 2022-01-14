@@ -29,13 +29,13 @@ EditorState::EditorState(StateMachine& state_machine, InputHandler& input)
 {
 	fn = al_load_font("resources/tex/Retro Gaming.ttf", 18, 0);
 
-	view.world_pos = { 0.f, 0.f };
+	createMap(map, "/home/aksel/Downloads/split/lvl1_lg.png", 100);
+
+	view.world_pos = { 35.f * map.tile_size, 39.f * map.tile_size};
 	view.screen_pos = { 2.f, 2.f };
 	view.scale = { 1.f, 1.f };
 
 	resizeView(view);
-
-	createMap(map, "/home/aksel/Downloads/split/lvl1_lg.png", 100);
 }
 
 EditorState::~EditorState()
@@ -193,7 +193,7 @@ void EditorState::onLeftMouseUp()
 {
 	if (m_input.isModifierDown(ALLEGRO_KEYMOD_SHIFT))
 	{
-		pushCommand(std::make_unique<FillTileCommand>(map, 0, fill_start_pos, getTilePos(map, view, m_input.getMousePos())));
+		pushCommand(std::make_unique<FillTileCommand>(map, false, fill_start_pos, getTilePos(map, view, m_input.getMousePos())));
 	}
 
 	filling = false;
@@ -205,22 +205,32 @@ void EditorState::onLeftMouseDown()
 		filling = true;
 		fill_start_pos = getTilePos(map, view, m_input.getMousePos());
 	}
-	else
+	else if (!isTileShown(map, getTilePos(map, view, m_input.getMousePos())))
 	{
-		if (!isTileShown(map, getTilePos(map, view, m_input.getMousePos())))
-		{
-			pushCommand(std::make_unique<SetTileCommand>(map, getTilePos(map, view, m_input.getMousePos()), true));
-		}
+		pushCommand(std::make_unique<SetTileCommand>(map, getTilePos(map, view, m_input.getMousePos()), true));
 	}
 }
 void EditorState::onRightMouseDown()
 {
-	if (isTileShown(map, getTilePos(map, view, m_input.getMousePos())))
+	if (m_input.isModifierDown(ALLEGRO_KEYMOD_SHIFT))
+	{
+		filling = true;
+		fill_start_pos = getTilePos(map, view, m_input.getMousePos());
+	}
+	else if (isTileShown(map, getTilePos(map, view, m_input.getMousePos())))
 	{
 		pushCommand(std::make_unique<SetTileCommand>(map, getTilePos(map, view, m_input.getMousePos()), false));
 	}
 }
-void EditorState::onRightMouseUp() { }
+void EditorState::onRightMouseUp()
+{
+	if (m_input.isModifierDown(ALLEGRO_KEYMOD_SHIFT))
+	{
+		pushCommand(std::make_unique<FillTileCommand>(map, true, fill_start_pos, getTilePos(map, view, m_input.getMousePos())));
+	}
+
+	filling = false;
+}
 
 void EditorState::save()
 {
