@@ -40,6 +40,7 @@ public:
 	void onRightMouseDown();
 	void onRightMouseUp();
 
+	void zoomToCursor(bool zoom_out);
 private:
 	ALLEGRO_FONT* fn;
 

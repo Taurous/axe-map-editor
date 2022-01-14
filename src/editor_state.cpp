@@ -9,10 +9,10 @@
 #include "state_machine.hpp"
 #include "util.hpp"
 
-constexpr int BOTTOM_BAR_HEIGHT = 40;
+constexpr int BOTTOM_BAR_HEIGHT = 48;
 constexpr size_t UNDO_STACK_LIMIT = 50;
-constexpr float MAX_ZOOM = 0.1f;
-constexpr float MIN_ZOOM = 5.f;
+constexpr float MIN_ZOOM = 0.1f;
+constexpr float MAX_ZOOM = 4.f;
 
 constexpr bool SAVE_VIEW = true;
 
@@ -31,8 +31,8 @@ EditorState::EditorState(StateMachine& state_machine, InputHandler& input)
 
 	createMap(map, "/home/aksel/Downloads/split/lvl1_lg.png", 100);
 
-	view.world_pos = { 35.f * map.tile_size, 39.f * map.tile_size};
-	view.screen_pos = { 2.f, 2.f };
+	view.world_pos = { 0.f, 0.f };
+	view.screen_pos = { 0.f, 0.f };
 	view.scale = { 1.f, 1.f };
 
 	resizeView(view);
@@ -57,6 +57,7 @@ void EditorState::pause()
 	m_input.clearKeybind(ALLEGRO_KEY_L);
 	m_input.clearKeybind(ALLEGRO_KEY_F3);
 	m_input.clearKeybind(ALLEGRO_KEY_C);
+	m_input.clearKeybind(ALLEGRO_KEY_R);
 }
 
 void EditorState::resume()
@@ -76,6 +77,7 @@ void EditorState::resume()
 	m_input.setKeybind(ALLEGRO_KEY_L, 		std::bind(&EditorState::load, this));
 	m_input.setKeybind(ALLEGRO_KEY_F3,		[&](){ draw_debug = !draw_debug; });
 	m_input.setKeybind(ALLEGRO_KEY_C,		[&](){ if (m_input.isModifierDown(ALLEGRO_KEYMOD_CTRL)) view.world_pos = { 0, 0 }; });
+	m_input.setKeybind(ALLEGRO_KEY_R,		[&](){ view.scale = {1, 1}; });
 }
 
 void EditorState::handleEvents(const ALLEGRO_EVENT &ev)
@@ -165,19 +167,11 @@ void EditorState::pushCommand(std::unique_ptr<Command> c)
 
 void EditorState::onMouseWheelUp()
 {
-	if (view.scale.x <= MIN_ZOOM)
-	{
-		view.scale += { 0.1f, 0.1f };
-	}
+	zoomToCursor(false);
 }
 void EditorState::onMouseWheelDown()
 {
-	if (view.scale.x >= MAX_ZOOM)
-	{
-		view.scale -= { 0.1f, 0.1f };
-		if (view.scale.x <= 0.001f) view.scale.x = MAX_ZOOM;
-		if (view.scale.y <= 0.001f) view.scale.y = MAX_ZOOM;
-	}
+	zoomToCursor(true);
 }
 void EditorState::onMiddleMouseUp()
 {
@@ -275,4 +269,29 @@ void EditorState::redo()
 
 		undo_stack.push_back(std::unique_ptr<Command>(c));
 	}
+}
+
+void EditorState::zoomToCursor(bool zoom_out)
+{
+	vec2f prev_pos = screenToWorld(m_input.getMousePos(), view);
+
+	if (zoom_out)
+	{
+		if (view.scale.x > MIN_ZOOM)
+		{
+			view.scale -= { 0.1f, 0.1f };
+			if (view.scale.x <= 0.001f) view.scale.x = MIN_ZOOM;
+			if (view.scale.y <= 0.001f) view.scale.y = MIN_ZOOM;
+		}
+	}
+	else
+	{
+		if (view.scale.x < MAX_ZOOM)
+		{
+			view.scale += { 0.1f, 0.1f };
+		}
+	}
+
+	vec2f new_pos = screenToWorld(m_input.getMousePos(), view);
+	view.world_pos += prev_pos - new_pos;
 }
