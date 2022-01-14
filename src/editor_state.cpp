@@ -25,17 +25,19 @@ void resizeView(View &v)
 }
 
 EditorState::EditorState(StateMachine& state_machine, InputHandler& input)
-	: AbstractState(state_machine, input), fn(nullptr), dragging(false), filling(false), draw_grid(true), draw_debug(false)
+	: AbstractState(state_machine, input), fn(nullptr), dragging(false), filling(false), show_hidden(false), draw_grid(true), draw_debug(false)
 {
 	fn = al_load_font("resources/tex/Retro Gaming.ttf", 18, 0);
 
-	createMap(map, "/home/aksel/Downloads/split/lvl1_lg.png", 100);
+	createMap(map, "/home/aksel/Downloads/Maps of the Mad Mage-20220114T044344Z-001/Maps of the Mad Mage/L1_grid.jpg", 100);
 
 	view.world_pos = { 0.f, 0.f };
 	view.screen_pos = { 0.f, 0.f };
 	view.scale = { 1.f, 1.f };
 
 	resizeView(view);
+
+	last_tile_hovered = { -1, -1 };
 }
 
 EditorState::~EditorState()
@@ -58,6 +60,7 @@ void EditorState::pause()
 	m_input.clearKeybind(ALLEGRO_KEY_F3);
 	m_input.clearKeybind(ALLEGRO_KEY_C);
 	m_input.clearKeybind(ALLEGRO_KEY_R);
+	m_input.clearKeybind(ALLEGRO_KEY_SPACE);
 }
 
 void EditorState::resume()
@@ -78,14 +81,42 @@ void EditorState::resume()
 	m_input.setKeybind(ALLEGRO_KEY_F3,		[&](){ draw_debug = !draw_debug; });
 	m_input.setKeybind(ALLEGRO_KEY_C,		[&](){ if (m_input.isModifierDown(ALLEGRO_KEYMOD_CTRL)) view.world_pos = { 0, 0 }; });
 	m_input.setKeybind(ALLEGRO_KEY_R,		[&](){ view.scale = {1, 1}; });
+	m_input.setKeybind(ALLEGRO_KEY_SPACE,	[&](){ show_hidden = !show_hidden; });
 }
 
 void EditorState::handleEvents(const ALLEGRO_EVENT &ev)
 {
-	if (ev.type == ALLEGRO_EVENT_DISPLAY_RESIZE)
+	vec2i cur_tile_hovered;
+
+	switch (ev.type)
 	{
-		resizeView(view);
-	}
+		case ALLEGRO_EVENT_DISPLAY_RESIZE:
+			resizeView(view);
+		break;
+
+		case ALLEGRO_EVENT_MOUSE_AXES:
+			cur_tile_hovered = getTilePos(map, view, m_input.getMousePos());
+
+			if (m_input.isMouseDown(MOUSE::LEFT) && !filling)
+			{
+				if (cur_tile_hovered != last_tile_hovered)
+				{
+					if (!isTileShown(map, cur_tile_hovered)) addTileToEditVector(cur_tile_hovered, true);
+				}
+			}
+			else if (m_input.isMouseDown(MOUSE::RIGHT) && !filling)
+			{
+				if (cur_tile_hovered != last_tile_hovered)
+				{
+					if (isTileShown(map, cur_tile_hovered)) addTileToEditVector(cur_tile_hovered, false);
+				}
+			}
+			last_tile_hovered = getTilePos(map, view, m_input.getMousePos());
+		break;
+
+		default:
+		break;
+	}	
 }
 
 void EditorState::update(float delta_time)
@@ -116,7 +147,7 @@ void EditorState::draw()
 
 	al_set_clipping_rectangle((int)view.screen_pos.x, (int)view.screen_pos.y, (int)view.size.x, (int)view.size.y);
 
-	drawMap(map, view, draw_grid);
+	drawMap(map, view, draw_grid, show_hidden);
 
 	if (filling)
 	{
@@ -185,9 +216,14 @@ void EditorState::onMiddleMouseDown()
 }
 void EditorState::onLeftMouseUp()
 {
-	if (m_input.isModifierDown(ALLEGRO_KEYMOD_SHIFT))
+	if (m_input.isModifierDown(ALLEGRO_KEYMOD_SHIFT) && filling)
 	{
-		pushCommand(std::make_unique<FillTileCommand>(map, false, fill_start_pos, getTilePos(map, view, m_input.getMousePos())));
+		pushCommand(std::make_unique<FillTileCommand>(map, true, fill_start_pos, getTilePos(map, view, m_input.getMousePos())));
+	}
+	else
+	{
+		if (!tiles_to_edit.empty()) pushCommand(std::make_unique<SetTileCommand>(map, tiles_to_edit, true));
+		tiles_to_edit.clear();
 	}
 
 	filling = false;
@@ -201,7 +237,7 @@ void EditorState::onLeftMouseDown()
 	}
 	else if (!isTileShown(map, getTilePos(map, view, m_input.getMousePos())))
 	{
-		pushCommand(std::make_unique<SetTileCommand>(map, getTilePos(map, view, m_input.getMousePos()), true));
+		addTileToEditVector(getTilePos(map, view, m_input.getMousePos()), true);
 	}
 }
 void EditorState::onRightMouseDown()
@@ -213,17 +249,28 @@ void EditorState::onRightMouseDown()
 	}
 	else if (isTileShown(map, getTilePos(map, view, m_input.getMousePos())))
 	{
-		pushCommand(std::make_unique<SetTileCommand>(map, getTilePos(map, view, m_input.getMousePos()), false));
+		addTileToEditVector(getTilePos(map, view, m_input.getMousePos()), false);
 	}
 }
 void EditorState::onRightMouseUp()
 {
-	if (m_input.isModifierDown(ALLEGRO_KEYMOD_SHIFT))
+	if (m_input.isModifierDown(ALLEGRO_KEYMOD_SHIFT) && filling)
 	{
-		pushCommand(std::make_unique<FillTileCommand>(map, true, fill_start_pos, getTilePos(map, view, m_input.getMousePos())));
+		pushCommand(std::make_unique<FillTileCommand>(map, false, fill_start_pos, getTilePos(map, view, m_input.getMousePos())));
+	}
+	else
+	{
+		if (!tiles_to_edit.empty()) pushCommand(std::make_unique<SetTileCommand>(map, tiles_to_edit, false));
+		tiles_to_edit.clear();
 	}
 
 	filling = false;
+}
+
+void EditorState::addTileToEditVector(vec2i position, bool show)
+{
+	tiles_to_edit.push_back(position);
+	setTile(map, position, show);
 }
 
 void EditorState::save()

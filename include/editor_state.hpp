@@ -1,6 +1,7 @@
 #pragma once
 
 #include <list>
+#include <vector>
 
 #include <allegro5/allegro.h>
 #include <allegro5/allegro_font.h>
@@ -39,6 +40,7 @@ public:
 	void onLeftMouseDown();
 	void onRightMouseDown();
 	void onRightMouseUp();
+	void addTileToEditVector(vec2i position, bool show);
 
 	void zoomToCursor(bool zoom_out);
 private:
@@ -50,9 +52,12 @@ private:
 	vec2f last_pos;
 	vec2f mouse_pos;
 
+	vec2i last_tile_hovered;
+
 	vec2i fill_start_pos;
 	bool dragging;
 	bool filling;
+	bool show_hidden;
 	bool draw_grid;
 	bool draw_debug;
 
@@ -60,4 +65,5 @@ private:
 	std::list<std::unique_ptr<Command>> undo_stack;
 
 	void pushCommand(std::unique_ptr<Command> c);
+	std::vector<vec2i> tiles_to_edit;
 };

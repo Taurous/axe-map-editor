@@ -100,10 +100,7 @@ void drawBitmap(const View& v, ALLEGRO_BITMAP* bmp, const vec2f& tl, int flags)
 
 void drawBitmapRegion(const View& v, ALLEGRO_BITMAP* bmp, const vec2f s_tl, const vec2f& s_dim, const vec2f& d_tl, int flags)
 {
-	vec2f new_tl = worldToScreen(d_tl, v);
-
-	al_draw_tinted_scaled_rotated_bitmap_region(bmp, s_tl.x, s_tl.y, s_dim.x, s_dim.y,
-		al_map_rgb(255, 255, 255), 0, 0, new_tl.x, new_tl.y, v.scale.x, v.scale.y, 0, flags);
+	drawTintedBitmapRegion(v, bmp, s_tl, s_dim, d_tl, al_map_rgb(255, 255, 255), flags);
 }
 
 void drawScaledBitmap(const View& v, ALLEGRO_BITMAP* bmp, const vec2f& tl, const vec2f& scale, int flags)
@@ -116,4 +113,12 @@ void drawScaledBitmap(const View& v, ALLEGRO_BITMAP* bmp, const vec2f& tl, const
 	vec2f new_tl = worldToScreen(tl, v);
 
 	al_draw_scaled_bitmap(bmp, 0, 0, sw, sh, new_tl.x, new_tl.y, sw * v.scale.x * scale.x, sh * v.scale.y * scale.y, 0);
+}
+
+void drawTintedBitmapRegion(const View& v, ALLEGRO_BITMAP* bmp, const vec2f s_tl, const vec2f& s_dim, const vec2f& d_tl, const ALLEGRO_COLOR& cl, int flags)
+{
+	vec2f new_tl = worldToScreen(d_tl, v);
+
+	al_draw_tinted_scaled_rotated_bitmap_region(bmp, s_tl.x, s_tl.y, s_dim.x, s_dim.y,
+		cl, 0, 0, new_tl.x, new_tl.y, v.scale.x, v.scale.y, 0, flags);
 }

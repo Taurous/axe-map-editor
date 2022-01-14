@@ -22,7 +22,7 @@ bool reloadMap(Map& m);
 bool saveMap(const Map& m, std::string file, const View& v);
 bool loadMap(Map &m, std::string file, View& v, bool restore_view);
 
-void drawMap(const Map& m, const View& v, bool draw_grid);
+void drawMap(const Map& m, const View& v, bool draw_grid, bool show_hidden);
 
 void hideTile(Map &m, const vec2i& position);
 void showTile(Map &m, const vec2i& position);
@@ -31,4 +31,3 @@ bool isTileShown(const Map& m, const vec2i& position);
 
 vec2i getTilePos(const Map &m, const View& v, const vec2f& screen_pos);
 void getVisibleTileRect(const Map& m, const View& v, vec2i& tl, vec2i& br);
-

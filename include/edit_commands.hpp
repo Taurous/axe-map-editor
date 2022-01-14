@@ -11,13 +11,14 @@
 class SetTileCommand : public Command
 {
 public:
-	SetTileCommand(Map& map, vec2i position, bool show) : m(map), p(position), s(show) { redo(); }
-	void redo() override { setTile(m, p, s); }
-	void undo() override { setTile(m, p, !s); }
+	SetTileCommand(Map& map, vec2i position, bool show) : m(map), s(show) { p.push_back(position); redo(); }
+	SetTileCommand(Map& map, std::vector<vec2i> positions, bool show) : m(map), p(positions), s(show) { }
+	void redo() override { for (auto &t : p) setTile(m, t, s); }
+	void undo() override { for (auto &t : p) setTile(m, t, !s); }
 
 private:
 	Map& m;
-	vec2i p;
+	std::vector<vec2i> p;
 	bool s;
 };
 

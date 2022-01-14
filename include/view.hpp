@@ -32,6 +32,7 @@ void drawFilledCircle(const View& v, const vec2f& c, const float& r, const ALLEG
 void drawBitmap(const View& v, ALLEGRO_BITMAP* bmp, const vec2f& tl, int flags);
 void drawBitmapRegion(const View& v, ALLEGRO_BITMAP* bmp, const vec2f s_tl, const vec2f& s_dim, const vec2f& d_tl, int flags);
 void drawScaledBitmap(const View& v, ALLEGRO_BITMAP* bmp, const vec2f& tl, const vec2f& scale, int flags);
+void drawTintedBitmapRegion(const View& v, ALLEGRO_BITMAP* bmp, const vec2f s_tl, const vec2f& s_dim, const vec2f& d_tl, const ALLEGRO_COLOR& cl, int flags);
 
 /*
 * Bitmap Drawing
