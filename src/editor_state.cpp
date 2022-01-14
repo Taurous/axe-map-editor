@@ -11,6 +11,8 @@
 
 constexpr int BOTTOM_BAR_HEIGHT = 40;
 constexpr size_t UNDO_STACK_LIMIT = 50;
+constexpr float MAX_ZOOM = 0.1f;
+constexpr float MIN_ZOOM = 5.f;
 
 constexpr bool SAVE_VIEW = true;
 
@@ -112,7 +114,7 @@ void EditorState::draw()
 
 	al_set_clipping_rectangle((int)view.screen_pos.x, (int)view.screen_pos.y, (int)view.size.x, (int)view.size.y);
 
-	drawMap(map, view, true);
+	drawMap(map, view, draw_grid);
 
 	if (filling)
 	{
@@ -163,16 +165,18 @@ void EditorState::pushCommand(std::unique_ptr<Command> c)
 
 void EditorState::onMouseWheelUp()
 {
-	if (view.scale.x <= 3.f)
+	if (view.scale.x <= MIN_ZOOM)
 	{
 		view.scale += { 0.1f, 0.1f };
 	}
 }
 void EditorState::onMouseWheelDown()
 {
-	if (view.scale.x >= 0.4f)
+	if (view.scale.x >= MAX_ZOOM)
 	{
 		view.scale -= { 0.1f, 0.1f };
+		if (view.scale.x <= 0.001f) view.scale.x = MAX_ZOOM;
+		if (view.scale.y <= 0.001f) view.scale.y = MAX_ZOOM;
 	}
 }
 void EditorState::onMiddleMouseUp()
@@ -216,7 +220,7 @@ void EditorState::onRightMouseDown()
 		pushCommand(std::make_unique<SetTileCommand>(map, getTilePos(map, view, m_input.getMousePos()), false));
 	}
 }
-void EditorState::onRightMouseUp() { std::cout << "*fart sound*\n"; }
+void EditorState::onRightMouseUp() { }
 
 void EditorState::save()
 {

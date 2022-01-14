@@ -183,10 +183,18 @@ void InputHandler::callKeybind(int key, bool pressed)
 {
 	if (pressed)
 	{
-		if (keybinds_p.find(key) != keybinds_p.end()) keybinds_p[key]();
+		if (keybinds_p.find(key) != keybinds_p.end())
+		{
+			keybinds_p[key]();
+			//if (key < ALLEGRO_KEY_MAX) std::cout << "Keybind Pressed: " << al_keycode_to_name(key) << "\n";
+		}
 	}
 	else
 	{
-		if (keybinds_r.find(key) != keybinds_r.end()) keybinds_r[key]();
+		if (keybinds_r.find(key) != keybinds_r.end())
+		{
+			keybinds_r[key]();
+			//if (key < ALLEGRO_KEY_MAX) std::cout << "Keybind Released: " << al_keycode_to_name(key) << "\n";
+		}
 	}
 }

@@ -37,7 +37,7 @@ bool createMap(Map& m, std::string path, int ts)
 	m.width = al_get_bitmap_width(m.bmp) / m.tile_size;
 	m.height = al_get_bitmap_height(m.bmp) / m.tile_size;
 
-	m.v_tiles.resize(m.width * m.height, false);
+	m.v_tiles.resize(m.width * m.height, true);
 
 	std::cout << "createMap(m, " << path << ", " << ts << ") results:" << "\n\tWidth: " << m.width << "\n\tHeight: " << m.height
 		<< "\n\tTile Size: " << m.tile_size << "\n\tv_tiles.size(): " << (unsigned int)m.v_tiles.size() << std::endl;
@@ -264,7 +264,7 @@ bool loadMap(Map& m, std::string file, View &v, bool restore_view)
 		v_tiles.resize(m.v_tiles.size());
 		std::copy(m.v_tiles.begin(), m.v_tiles.end(), v_tiles.begin());
 
-		sortMapVisibilty(v);
+		sortMapVisibily(v);
 
 		editable = true;
 		return true;
@@ -276,25 +276,32 @@ bool loadMap(Map& m, std::string file, View &v, bool restore_view)
 
 void drawMap(const Map& m, const View& v, bool draw_grid)
 {
-	/*al_hold_bitmap_drawing(true);
-
-	
-
-	al_hold_bitmap_drawing(false);*/
-
 	vec2i vis_tl, vis_br;
 	getVisibleTileRect(m, v, vis_tl, vis_br);
 
+	al_hold_bitmap_drawing(true);
+
+	for (int x = vis_tl.x; x <= vis_br.x; ++x)
+	{
+		for (int y = vis_tl.y; y <= vis_br.y; ++y)
+		{
+			if (m.v_tiles[y * m.width + x]) drawBitmapRegion(v, m.bmp, vec2f{x * m.tile_size, y * m.tile_size}, vec2f{m.tile_size, m.tile_size}, vec2f{x * m.tile_size, y * m.tile_size}, 0);
+		}
+	}
+
+	al_hold_bitmap_drawing(false);
+
 	if (draw_grid)
 	{
-		vec2f off((float)vis_tl.x * m.tile_size, (float)vis_tl.y * m.tile_size);
-		off = worldToScreen(off, v);
+		for (int x = vis_tl.x; x <= vis_br.x; ++x)
+		{
+			drawLine(v, {x * m.tile_size, vis_tl.y * m.tile_size}, {x * m.tile_size, vis_br.y * m.tile_size + m.tile_size}, al_map_rgb(40, 40, 40), 1);
+		}
 
-		for (float x = off.x; x < v.screen_pos.x + v.size.x; x += m.tile_size * v.scale.x)
-			al_draw_line(x, v.screen_pos.y, x, v.screen_pos.y + v.size.y, al_map_rgb(60, 60, 60), 1);
-
-		for (float y = off.y; y < v.screen_pos.y + v.size.y; y += m.tile_size * v.scale.y)
-			al_draw_line(v.screen_pos.x, y, v.screen_pos.x + v.size.x, y, al_map_rgb(60, 60, 60), 1);
+		for (int y = vis_tl.y; y <= vis_br.y; ++y)
+		{
+			drawLine(v, {vis_tl.x * m.tile_size, y * m.tile_size}, {vis_br.x * m.tile_size + m.tile_size, y * m.tile_size}, al_map_rgb(40, 40, 40), 1);
+		}
 	}
 }
 
@@ -328,11 +335,11 @@ bool isTileShown(const Map& m, const vec2i& p)
 }
 void getVisibleTileRect(const Map& m, const View& v, vec2i& tl, vec2i& br)
 {
-	tl.x = (int)floor((v.world_pos.x - (v.size.x / 2 / v.scale.x)) / m.tile_size);
-	tl.y = (int)floor((v.world_pos.y - (v.size.y / 2 / v.scale.y)) / m.tile_size);
+	tl.x = std::max((int)floor((v.world_pos.x - (v.size.x / 2 / v.scale.x)) / m.tile_size), 0);
+	tl.y = std::max((int)floor((v.world_pos.y - (v.size.y / 2 / v.scale.y)) / m.tile_size), 0);
 
-	br.x = (int)floor((v.world_pos.x + (v.size.x / 2 / v.scale.x)) / m.tile_size);
-	br.y = (int)floor((v.world_pos.y + (v.size.y / 2 / v.scale.y)) / m.tile_size);
+	br.x = std::min((int)floor((v.world_pos.x + (v.size.x / 2 / v.scale.x)) / m.tile_size), m.width - 1);
+	br.y = std::min((int)floor((v.world_pos.y + (v.size.y / 2 / v.scale.y)) / m.tile_size), m.height - 1);
 }
 
 vec2i getTilePos(const Map& m, const View& v, const vec2f& screen_pos)
