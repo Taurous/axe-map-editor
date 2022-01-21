@@ -12,6 +12,8 @@
 #include "map.hpp"
 #include "edit_commands.hpp"
 
+#include "button.hpp"
+
 class EditorState : public AbstractState
 {
 public:
@@ -62,6 +64,8 @@ private:
 	bool show_hidden;
 	bool draw_grid;
 	bool draw_debug;
+
+	Button btn;
 
 	std::list<std::unique_ptr<Command>> redo_stack;
 	std::list<std::unique_ptr<Command>> undo_stack;

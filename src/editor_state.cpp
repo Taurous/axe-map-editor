@@ -40,6 +40,15 @@ EditorState::EditorState(StateMachine& state_machine, InputHandler& input)
 	resizeView(view);
 
 	last_tile_hovered = { -1, -1 };
+
+	btn = Button({getScreenSize().x - 190, getScreenSize().y - 55},
+			{180, 50},
+			"Test Button",
+			al_map_rgb(128, 20, 150),
+			al_map_rgb(29, 29, 29),
+			al_map_rgb(255, 0, 255),
+			fn);
+	btn.setCallback([this](){ save(); });
 }
 
 EditorState::~EditorState()
@@ -78,8 +87,8 @@ void EditorState::resume()
 	m_input.setKeybind(ALLEGRO_KEY_G,		[this](){ draw_grid = !draw_grid; });
 	m_input.setKeybind(ALLEGRO_KEY_Z, 		[this](){ undo(); });
 	m_input.setKeybind(ALLEGRO_KEY_Y, 		[this](){ redo(); });
-	m_input.setKeybind(ALLEGRO_KEY_S, 		[this](){ save(); });
-	m_input.setKeybind(ALLEGRO_KEY_L, 		[this](){ load(); });
+	m_input.setKeybind(ALLEGRO_KEY_S, 		[this](){ if (m_input.isModifierDown(ALLEGRO_KEYMOD_CTRL)) save(); });
+	m_input.setKeybind(ALLEGRO_KEY_L, 		[this](){ if (m_input.isModifierDown(ALLEGRO_KEYMOD_CTRL)) load(); });
 	m_input.setKeybind(ALLEGRO_KEY_F3,		[this](){ draw_debug = !draw_debug; });
 	m_input.setKeybind(ALLEGRO_KEY_C,		[this](){ if (m_input.isModifierDown(ALLEGRO_KEYMOD_CTRL)) view.world_pos = { 0, 0 }; });
 	m_input.setKeybind(ALLEGRO_KEY_R,		[this](){ view.scale = {1, 1}; });
@@ -186,6 +195,8 @@ void EditorState::draw()
 		world_tile.x, world_tile.y);
 	if (map.needs_save) al_draw_text(fn, al_map_rgb(255, 255, 255), screen_dim.x - 16, 16, ALLEGRO_ALIGN_CENTER, "*");
 
+	btn.draw();
+
 	//Debug
 	if (draw_debug)
 	{
@@ -255,6 +266,14 @@ void EditorState::onLeftMouseUp()
 			tiles_to_edit.clear();
 		}
 	}
+	else
+	{
+		if (btn.isMouseHovering(m_input.getMousePos()))
+		{
+			btn.setState(BTN_STATE::DEFAULT);
+			btn();
+		}
+	}
 	filling = false;
 }
 void EditorState::onLeftMouseDown()
@@ -269,6 +288,13 @@ void EditorState::onLeftMouseDown()
 		else if (!isTileShown(map, getTilePos(map, view, m_input.getMousePos())))
 		{
 			addTileToEditVector(getTilePos(map, view, m_input.getMousePos()), true);
+		}
+	}
+	else
+	{
+		if (btn.isMouseHovering(m_input.getMousePos()))
+		{
+			btn.setState(BTN_STATE::PRESSED);
 		}
 	}
 }
@@ -312,20 +338,14 @@ void EditorState::addTileToEditVector(vec2i position, bool show)
 
 void EditorState::save()
 {
-	if (m_input.isModifierDown(ALLEGRO_KEYMOD_CTRL))
-	{
-		saveMap(map, "mapdata/data.bin", view);
-	}
+	saveMap(map, "mapdata/data.bin", view);
 }
 void EditorState::load()
 {
-	if (m_input.isModifierDown(ALLEGRO_KEYMOD_CTRL))
+	if (loadMap(map, "mapdata/data.bin", view, SAVE_VIEW))
 	{
-		if (loadMap(map, "mapdata/data.bin", view, SAVE_VIEW))
-		{
-			undo_stack.clear();
-			redo_stack.clear();
-		}
+		undo_stack.clear();
+		redo_stack.clear();
 	}
 }
 
