@@ -45,7 +45,7 @@ public:
 
 	bool isModifierDown(const int mod);
 
-	vec2f getMousePos() const;
+	vec2i getMousePos() const;
 	bool isMouseInWindow() const;
 
 	void setKeybind(int key, std::function<void(void)> callback, bool onPressed = true);

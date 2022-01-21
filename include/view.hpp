@@ -6,27 +6,27 @@
 
 struct View
 {
-	vec2f world_pos;
-	vec2f screen_pos;
-	vec2f scale;
-	vec2f size;
+	vec2d world_pos;
+	vec2i screen_pos;
+	vec2d scale;
+	vec2i size;
 };
 
-vec2f worldToScreen(const vec2f& p, const View& v);
-vec2f screenToWorld(const vec2f& p, const View& v);
+vec2d worldToScreen(const vec2d& p, const View& v);
+vec2d screenToWorld(const vec2d& p, const View& v);
 
-void drawLine(const View& v, const vec2f& v1, const vec2f& v2, const ALLEGRO_COLOR& cl, float line_width);
-void drawTriangle(const View& v, const vec2f& v1, const vec2f& v2, const vec2f v3, const ALLEGRO_COLOR& cl, float line_width);
-void drawFilledTriangle(const View& v, const vec2f& v1, const vec2f& v2, const vec2f v3, const ALLEGRO_COLOR& cl);
-void drawRectangle(const View& v, const vec2f& tl, const vec2f& br, const ALLEGRO_COLOR& cl, float line_width);
-void drawFilledRectangle(const View& v, const vec2f& tl, const vec2f& br, const ALLEGRO_COLOR& cl);
-void drawCircle(const View& v, const vec2f& c, const float& r, const ALLEGRO_COLOR& cl, float line_width);
-void drawFilledCircle(const View& v, const vec2f& c, const float& r, const ALLEGRO_COLOR& cl);
+void drawLine(const View& v, const vec2d& v1, const vec2d& v2, const ALLEGRO_COLOR& cl, double line_width);
+void drawTriangle(const View& v, const vec2d& v1, const vec2d& v2, const vec2d v3, const ALLEGRO_COLOR& cl, double line_width);
+void drawFilledTriangle(const View& v, const vec2d& v1, const vec2d& v2, const vec2d v3, const ALLEGRO_COLOR& cl);
+void drawRectangle(const View& v, const vec2d& tl, const vec2d& br, const ALLEGRO_COLOR& cl, double line_width);
+void drawFilledRectangle(const View& v, const vec2d& tl, const vec2d& br, const ALLEGRO_COLOR& cl);
+void drawCircle(const View& v, const vec2d& c, const double& r, const ALLEGRO_COLOR& cl, double line_width);
+void drawFilledCircle(const View& v, const vec2d& c, const double& r, const ALLEGRO_COLOR& cl);
 
-void drawBitmap(const View& v, ALLEGRO_BITMAP* bmp, const vec2f& tl, int flags);
-void drawBitmapRegion(const View& v, ALLEGRO_BITMAP* bmp, const vec2f s_tl, const vec2f& s_dim, const vec2f& d_tl, int flags);
-void drawScaledBitmap(const View& v, ALLEGRO_BITMAP* bmp, const vec2f& tl, const vec2f& scale, int flags);
-void drawTintedBitmapRegion(const View& v, ALLEGRO_BITMAP* bmp, const vec2f s_tl, const vec2f& s_dim, const vec2f& d_tl, const ALLEGRO_COLOR& cl, int flags);
+void drawBitmap(const View& v, ALLEGRO_BITMAP* bmp, const vec2d& tl, int flags);
+void drawBitmapRegion(const View& v, ALLEGRO_BITMAP* bmp, const vec2d s_tl, const vec2d& s_dim, const vec2d& d_tl, int flags);
+void drawScaledBitmap(const View& v, ALLEGRO_BITMAP* bmp, const vec2d& tl, const vec2d& scale, int flags);
+void drawTintedBitmapRegion(const View& v, ALLEGRO_BITMAP* bmp, const vec2d s_tl, const vec2d& s_dim, const vec2d& d_tl, const ALLEGRO_COLOR& cl, int flags);
 
 /*
 * Bitmap Drawing

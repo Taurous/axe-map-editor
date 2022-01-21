@@ -40,7 +40,7 @@ void StateMachine::handleEvents(const ALLEGRO_EVENT &ev)
 	m_states.back()->handleEvents(ev);
 }
 
-void StateMachine::update(float delta_time)
+void StateMachine::update(double delta_time)
 {
 	m_states.back()->update(delta_time);
 }

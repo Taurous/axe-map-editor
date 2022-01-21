@@ -2,7 +2,7 @@
 
 #include <tuple>
 #include <type_traits>
-#include <ostream>
+#include <sstream>
 
 template <typename T> class vec2;
 
@@ -37,7 +37,7 @@ public:
 	vec2& operator*=(const T& rhs) { x *= rhs; y *= rhs; return *this; }
 	vec2& operator/=(const T& rhs) { x /= rhs; y /= rhs; return *this; }
 
-	//Comparison
+	//Comparison ( <> Doesn't make a lot of sense)
 	friend bool operator==(const vec2& lhs, const vec2& rhs) { return std::tie(lhs.x, lhs.y) == std::tie(rhs.x, rhs.y); }
 	friend bool operator!=(const vec2& lhs, const vec2& rhs) { return !(lhs == rhs); }
 	friend bool operator< (const vec2& lhs, const vec2& rhs) { return std::tie(lhs.x, lhs.y) < std::tie(rhs.x, rhs.y); }
@@ -48,8 +48,16 @@ public:
 	//Stream
 	friend std::ostream& operator<<(std::ostream& os, const vec2& v)
 	{
-		os << "{" << v.x << "," << v.y << "}";
+		os << "{" << v.x << ", " << v.y << "}";
 		return os;
+	}
+
+	bool isInBounds(vec2<T> top_left, vec2<T> bottom_right) { return (x > top_left.x && x < bottom_right.x && y > top_left.y && y < bottom_right.y); }
+	std::string str()
+	{
+		std::stringstream ss;
+		ss << (*this);
+		return ss.str();
 	}
 
 	//Public data members

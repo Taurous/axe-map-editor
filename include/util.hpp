@@ -3,6 +3,6 @@
 
 #include "vec.hpp"
 
-vec2f getScreenSize();
+vec2i getScreenSize();
 
 #endif

@@ -140,13 +140,13 @@ bool InputHandler::isMouseWheelUp(const int mod) const
 	else return false;
 }
 
-vec2f InputHandler::getMousePos(void) const
+vec2i InputHandler::getMousePos(void) const
 {
-	return vec2f(m_cur_mouse_state.x, m_cur_mouse_state.y);
+	return vec2i{m_cur_mouse_state.x, m_cur_mouse_state.y};
 }
 bool InputHandler::isMouseInWindow(void) const
 {
-	return (m_cur_mouse_state.display == al_get_current_display());
+	return (m_cur_mouse_state.display == al_get_current_display()); // TODO: Test with multiple displays
 }
 
 bool InputHandler::isModifierDown(const int mod)

@@ -23,7 +23,7 @@ public:
 	void resume() override;
 
 	void handleEvents(const ALLEGRO_EVENT &ev) override;
-	void update(float delta_time) override;
+	void update(double delta_time) override;
 	void draw() override;
 
 	//Keybound Functions
@@ -42,15 +42,17 @@ public:
 	void onRightMouseUp();
 	void addTileToEditVector(vec2i position, bool show);
 
+	bool isMouseInView();
 	void zoomToCursor(bool zoom_out);
 private:
 	ALLEGRO_FONT* fn;
 
 	View view;
 	Map map;
+	std::string save_file;
 
-	vec2f last_pos;
-	vec2f mouse_pos;
+	vec2i last_pos;
+	vec2i mouse_pos; // Needs better name
 
 	vec2i last_tile_hovered;
 
@@ -58,7 +60,6 @@ private:
 	bool dragging;
 	bool filling;
 	bool show_hidden;
-	bool saved;
 	bool draw_grid;
 	bool draw_debug;
 

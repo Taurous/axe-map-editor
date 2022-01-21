@@ -27,7 +27,7 @@ public: // test
 	void removeDeadStates();
 
 	void handleEvents(const ALLEGRO_EVENT &ev);
-	void update(float delta_time);
+	void update(double delta_time);
 	void draw(bool draw_all);
 
 	bool running() const { return m_running; }

@@ -102,7 +102,7 @@ int main(int argc, char ** argv)
 	{
 		ALLEGRO_EVENT ev;
 		std::chrono::steady_clock::time_point current_time;
-		float delta_time;
+		double delta_time;
 
 		al_wait_for_event(ev_queue, &ev);
 
@@ -119,7 +119,7 @@ int main(int argc, char ** argv)
 
 			case ALLEGRO_EVENT_TIMER:
 				current_time = std::chrono::steady_clock::now();
-				delta_time = std::chrono::duration<float>(current_time - last_time).count();
+				delta_time = std::chrono::duration<double>(current_time - last_time).count();
 				last_time = current_time;
 				m_sm.update(delta_time);
 				m_sm.removeDeadStates();

@@ -9,31 +9,33 @@
 #include "state_machine.hpp"
 #include "util.hpp"
 
-constexpr int BOTTOM_BAR_HEIGHT = 48;
+constexpr int BOTTOM_BAR_HEIGHT = 64;
 constexpr size_t UNDO_STACK_LIMIT = 50;
-constexpr float MIN_ZOOM = 0.1f;
-constexpr float MAX_ZOOM = 4.f;
+constexpr double MIN_ZOOM = 0.13;
+constexpr double MAX_ZOOM = 2.19;
+constexpr double ZOOM_FACTOR = 0.08;
 
 constexpr bool SAVE_VIEW = true;
 
 void resizeView(View &v)
 {
-	vec2f screen_size = getScreenSize();
+	vec2d screen_size = getScreenSize();
 
 	v.size.x = screen_size.x;
 	v.size.y = screen_size.y - BOTTOM_BAR_HEIGHT;
 }
 
 EditorState::EditorState(StateMachine& state_machine, InputHandler& input)
-	: AbstractState(state_machine, input), fn(nullptr), dragging(false), filling(false), show_hidden(false), saved(true), draw_grid(true), draw_debug(false)
+	: AbstractState(state_machine, input), fn(nullptr), dragging(false), filling(false), show_hidden(false), draw_grid(true), draw_debug(false)
 {
 	fn = al_load_font("resources/tex/Retro Gaming.ttf", 22, 0);
 
 	createMap(map, "/home/aksel/Downloads/Maps of the Mad Mage-20220114T044344Z-001/Maps of the Mad Mage/L1_grid.jpg", 100);
+	save_file = {"mapdata.bin"};
 
-	view.world_pos = { 0.f, 0.f };
-	view.screen_pos = { 0.f, 0.f };
-	view.scale = { 1.f, 1.f };
+	view.world_pos = { 0.0, 0.0 };
+	view.screen_pos = { 0, 0 };
+	view.scale = { 1.0, 1.0 };
 
 	resizeView(view);
 
@@ -87,6 +89,7 @@ void EditorState::resume()
 void EditorState::handleEvents(const ALLEGRO_EVENT &ev)
 {
 	vec2i cur_tile_hovered;
+	vec2i mouse = m_input.getMousePos();
 
 	switch (ev.type)
 	{
@@ -95,23 +98,26 @@ void EditorState::handleEvents(const ALLEGRO_EVENT &ev)
 		break;
 
 		case ALLEGRO_EVENT_MOUSE_AXES:
-			cur_tile_hovered = getTilePos(map, view, m_input.getMousePos());
+			cur_tile_hovered = getTilePos(map, view, mouse);
 
-			if (m_input.isMouseDown(MOUSE::LEFT) && !filling)
+			if (isMouseInView()) // Test
 			{
-				if (cur_tile_hovered != last_tile_hovered)
+				if (m_input.isMouseDown(MOUSE::LEFT) && !filling)
 				{
-					if (!isTileShown(map, cur_tile_hovered)) addTileToEditVector(cur_tile_hovered, true);
+					if (cur_tile_hovered != last_tile_hovered)
+					{
+						if (!isTileShown(map, cur_tile_hovered)) addTileToEditVector(cur_tile_hovered, true);
+					}
+				}
+				else if (m_input.isMouseDown(MOUSE::RIGHT) && !filling)
+				{
+					if (cur_tile_hovered != last_tile_hovered)
+					{
+						if (isTileShown(map, cur_tile_hovered)) addTileToEditVector(cur_tile_hovered, false);
+					}
 				}
 			}
-			else if (m_input.isMouseDown(MOUSE::RIGHT) && !filling)
-			{
-				if (cur_tile_hovered != last_tile_hovered)
-				{
-					if (isTileShown(map, cur_tile_hovered)) addTileToEditVector(cur_tile_hovered, false);
-				}
-			}
-			last_tile_hovered = getTilePos(map, view, m_input.getMousePos());
+			last_tile_hovered = getTilePos(map, view, mouse);
 		break;
 
 		default:
@@ -119,26 +125,27 @@ void EditorState::handleEvents(const ALLEGRO_EVENT &ev)
 	}	
 }
 
-void EditorState::update(float delta_time)
+void EditorState::update(double delta_time)
 {
+	std::string window_title = "Axe Dungeon Map Editor - " + save_file;
+	if (map.needs_save) window_title += "*";
+	
+	al_set_window_title(al_get_current_display(), window_title.c_str());
+
 	if (!m_input.isMouseDown(MOUSE::MIDDLE))
 	{
-		vec2f direction{ 0,0 };
-		float vel = 200.f;
-		if (m_input.isKeyDown(ALLEGRO_KEY_LSHIFT))	vel *= 2.5f;
+		vec2d direction{ 0,0 };
+		double vel = 500.0;
+		if (m_input.isKeyDown(ALLEGRO_KEY_LSHIFT))	vel *= 2.5;
 
-		if (m_input.isKeyDown(ALLEGRO_KEY_LEFT)	|| m_input.isKeyDown(ALLEGRO_KEY_A)) direction.x -= 1.f;
-		if (m_input.isKeyDown(ALLEGRO_KEY_RIGHT)|| m_input.isKeyDown(ALLEGRO_KEY_D)) direction.x += 1.f;
-		if (m_input.isKeyDown(ALLEGRO_KEY_UP)	|| m_input.isKeyDown(ALLEGRO_KEY_W)) direction.y -= 1.f;
-		if (m_input.isKeyDown(ALLEGRO_KEY_DOWN)	|| (m_input.isKeyDown(ALLEGRO_KEY_S) && !m_input.isModifierDown(ALLEGRO_KEYMOD_CTRL))) direction.y += 1.f;
+		if (m_input.isKeyDown(ALLEGRO_KEY_LEFT)	|| m_input.isKeyDown(ALLEGRO_KEY_A)) direction.x -= 1.0;
+		if (m_input.isKeyDown(ALLEGRO_KEY_RIGHT)|| m_input.isKeyDown(ALLEGRO_KEY_D)) direction.x += 1.0;
+		if (m_input.isKeyDown(ALLEGRO_KEY_UP)	|| m_input.isKeyDown(ALLEGRO_KEY_W)) direction.y -= 1.0;
+		if (m_input.isKeyDown(ALLEGRO_KEY_DOWN)	|| (m_input.isKeyDown(ALLEGRO_KEY_S) && !m_input.isModifierDown(ALLEGRO_KEYMOD_CTRL))) direction.y += 1.0;
 
 		view.world_pos += normalize(direction) * vel * delta_time;
 	}
-	else if (dragging)
-	{
-		vec2f cur_mouse_pos = m_input.getMousePos();
-		view.world_pos = last_pos + ((mouse_pos - cur_mouse_pos) / view.scale);
-	}
+	else if (dragging) view.world_pos = vec2d(last_pos) + (vec2d(mouse_pos - m_input.getMousePos()) / view.scale);
 }
 
 void EditorState::draw()
@@ -151,25 +158,25 @@ void EditorState::draw()
 
 	if (filling)
 	{
-		vec2f screen_fill_start = vec2f(fill_start_pos) * static_cast<float>(map.tile_size);
-		vec2f screen_fill_end = vec2f(getTilePos(map, view, m_input.getMousePos())) * static_cast<float>(map.tile_size);
+		vec2i screen_fill_start = fill_start_pos * map.tile_size;
+		vec2i screen_fill_end = getTilePos(map, view, m_input.getMousePos()) * map.tile_size;
 
-		vec2f t_start_fill, t_end_fill;
+		vec2i t_start_fill, t_end_fill;
 
 		t_start_fill.x = std::min(screen_fill_start.x, screen_fill_end.x);
 		t_start_fill.y = std::min(screen_fill_start.y, screen_fill_end.y);
 		t_end_fill.x = std::max(screen_fill_start.x, screen_fill_end.x);
 		t_end_fill.y = std::max(screen_fill_start.y, screen_fill_end.y);
 
-		drawRectangle(view, t_start_fill, t_end_fill + vec2f{ static_cast<float>(map.tile_size), static_cast<float>(map.tile_size) }, al_map_rgb(255, 0, 0), 1);
+		drawRectangle(view, t_start_fill, t_end_fill + vec2i{map.tile_size, map.tile_size}, al_map_rgb(255, 0, 0), 1);
 	}
 
 	al_reset_clipping_rectangle();
 
 	//Draw UI
 
-	vec2f screen_dim = getScreenSize();
-	vec2i world_tile = view.world_pos / vec2f{map.tile_size, map.tile_size};
+	vec2d screen_dim = getScreenSize();
+	vec2i world_tile = view.world_pos / vec2d(map.tile_size, map.tile_size);
 
 	al_draw_filled_rectangle(0, screen_dim.y - BOTTOM_BAR_HEIGHT, screen_dim.x, screen_dim.y, al_color_html("#d35400"));
 
@@ -177,34 +184,34 @@ void EditorState::draw()
 		last_tile_hovered.x, last_tile_hovered.y);
 	al_draw_textf(fn, al_map_rgb(0, 0, 0), 280, screen_dim.y - (BOTTOM_BAR_HEIGHT / 2), ALLEGRO_ALIGN_CENTER, "View: %i:%i",
 		world_tile.x, world_tile.y);
-	if (!saved) al_draw_text(fn, al_map_rgb(255, 255, 255), screen_dim.x - 64, screen_dim.y - (BOTTOM_BAR_HEIGHT / 2), ALLEGRO_ALIGN_CENTER, "*");
+	if (map.needs_save) al_draw_text(fn, al_map_rgb(255, 255, 255), screen_dim.x - 16, 16, ALLEGRO_ALIGN_CENTER, "*");
 
 	//Debug
 	if (draw_debug)
 	{
 		al_draw_textf(fn, al_map_rgb(255, 255, 255), 10, 10, 0, "undo stack size: %li", undo_stack.size());
-		al_draw_textf(fn, al_map_rgb(255, 255, 255), 10, 28, 0, "redo stack size: %li", redo_stack.size());
+		al_draw_textf(fn, al_map_rgb(255, 255, 255), 10, 30, 0, "redo stack size: %li", redo_stack.size());
+		al_draw_textf(fn, al_map_rgb(255, 255, 255), 10, 50, 0, "view scale: %.4f", view.scale.x);
+		al_draw_textf(fn, al_map_rgb(255, 255, 255), 10, 70, 0, "in view: %s", isMouseInView() ? "true" : "false");
+		al_draw_textf(fn, al_map_rgb(255, 255, 255), 10, 90, 0, "%s", m_input.getMousePos().str().c_str());
+		
+		//Draw reticle in center of view
+		al_draw_line(view.screen_pos.x + (view.size.x / 2.0) - 8,
+		view.screen_pos.y + (view.size.y / 2.0),
+		view.screen_pos.x + (view.size.x / 2.0) + 8,
+		view.screen_pos.y + (view.size.y / 2.0),
+		al_map_rgb(255, 0, 0), 2);
+
+		al_draw_line(view.screen_pos.x + (view.size.x / 2.0),
+		view.screen_pos.y + (view.size.y / 2.0) - 8,
+		view.screen_pos.x + (view.size.x / 2.0),
+		view.screen_pos.y + (view.size.y / 2.0) + 8,
+		al_map_rgb(255, 0, 0), 2);
 	}
-
-	/* Draw reticle in center of view
-
-	al_draw_line(view.screen_pos.x + (view.size.x / 2.f) - 8,
-	view.screen_pos.y + (view.size.y / 2.f),
-	view.screen_pos.x + (view.size.x / 2.f) + 8,
-	view.screen_pos.y + (view.size.y / 2.f),
-	al_map_rgb(255, 0, 0), 2);
-
-	al_draw_line(view.screen_pos.x + (view.size.x / 2.f),
-	view.screen_pos.y + (view.size.y / 2.f) - 8,
-	view.screen_pos.x + (view.size.x / 2.f),
-	view.screen_pos.y + (view.size.y / 2.f) + 8,
-	al_map_rgb(255, 0, 0), 2);
-	*/
 }
 
 void EditorState::pushCommand(std::unique_ptr<Command> c)
 {
-	saved = false;
 	undo_stack.push_back(std::move(c));
 
 	redo_stack.clear();
@@ -215,11 +222,11 @@ void EditorState::pushCommand(std::unique_ptr<Command> c)
 
 void EditorState::onMouseWheelUp()
 {
-	zoomToCursor(false);
+	if (isMouseInView()) zoomToCursor(false);
 }
 void EditorState::onMouseWheelDown()
 {
-	zoomToCursor(true);
+	if (isMouseInView()) zoomToCursor(true);
 }
 void EditorState::onMiddleMouseUp()
 {
@@ -227,60 +234,73 @@ void EditorState::onMiddleMouseUp()
 }
 void EditorState::onMiddleMouseDown()
 {
-	mouse_pos = m_input.getMousePos();
-	last_pos = view.world_pos;
-	dragging = true;
+	if (isMouseInView())
+	{
+		mouse_pos = m_input.getMousePos();
+		last_pos = view.world_pos;
+		dragging = true;
+	}
 }
 void EditorState::onLeftMouseUp()
 {
-	if (m_input.isModifierDown(ALLEGRO_KEYMOD_SHIFT) && filling)
+	if (isMouseInView())
 	{
-		pushCommand(std::make_unique<FillTileCommand>(map, true, fill_start_pos, getTilePos(map, view, m_input.getMousePos())));
+		if (m_input.isModifierDown(ALLEGRO_KEYMOD_SHIFT) && filling)
+		{
+			pushCommand(std::make_unique<FillTileCommand>(map, true, fill_start_pos, getTilePos(map, view, m_input.getMousePos())));
+		}
+		else
+		{
+			if (!tiles_to_edit.empty()) pushCommand(std::make_unique<SetTileCommand>(map, tiles_to_edit, true));
+			tiles_to_edit.clear();
+		}
 	}
-	else
-	{
-		if (!tiles_to_edit.empty()) pushCommand(std::make_unique<SetTileCommand>(map, tiles_to_edit, true));
-		tiles_to_edit.clear();
-	}
-
 	filling = false;
 }
 void EditorState::onLeftMouseDown()
 {
-	if (m_input.isModifierDown(ALLEGRO_KEYMOD_SHIFT))
+	if (isMouseInView())
 	{
-		filling = true;
-		fill_start_pos = getTilePos(map, view, m_input.getMousePos());
-	}
-	else if (!isTileShown(map, getTilePos(map, view, m_input.getMousePos())))
-	{
-		addTileToEditVector(getTilePos(map, view, m_input.getMousePos()), true);
+		if (m_input.isModifierDown(ALLEGRO_KEYMOD_SHIFT))
+		{
+			filling = true;
+			fill_start_pos = getTilePos(map, view, m_input.getMousePos());
+		}
+		else if (!isTileShown(map, getTilePos(map, view, m_input.getMousePos())))
+		{
+			addTileToEditVector(getTilePos(map, view, m_input.getMousePos()), true);
+		}
 	}
 }
 void EditorState::onRightMouseDown()
 {
-	if (m_input.isModifierDown(ALLEGRO_KEYMOD_SHIFT))
+	if (isMouseInView())
 	{
-		filling = true;
-		fill_start_pos = getTilePos(map, view, m_input.getMousePos());
-	}
-	else if (isTileShown(map, getTilePos(map, view, m_input.getMousePos())))
-	{
-		addTileToEditVector(getTilePos(map, view, m_input.getMousePos()), false);
+		if (m_input.isModifierDown(ALLEGRO_KEYMOD_SHIFT))
+		{
+			filling = true;
+			fill_start_pos = getTilePos(map, view, m_input.getMousePos());
+		}
+		else if (isTileShown(map, getTilePos(map, view, m_input.getMousePos())))
+		{
+			addTileToEditVector(getTilePos(map, view, m_input.getMousePos()), false);
+		}
 	}
 }
 void EditorState::onRightMouseUp()
 {
-	if (m_input.isModifierDown(ALLEGRO_KEYMOD_SHIFT) && filling)
+	if (isMouseInView())
 	{
-		pushCommand(std::make_unique<FillTileCommand>(map, false, fill_start_pos, getTilePos(map, view, m_input.getMousePos())));
+		if (m_input.isModifierDown(ALLEGRO_KEYMOD_SHIFT) && filling)
+		{
+			pushCommand(std::make_unique<FillTileCommand>(map, false, fill_start_pos, getTilePos(map, view, m_input.getMousePos())));
+		}
+		else
+		{
+			if (!tiles_to_edit.empty()) pushCommand(std::make_unique<SetTileCommand>(map, tiles_to_edit, false));
+			tiles_to_edit.clear();
+		}
 	}
-	else
-	{
-		if (!tiles_to_edit.empty()) pushCommand(std::make_unique<SetTileCommand>(map, tiles_to_edit, false));
-		tiles_to_edit.clear();
-	}
-
 	filling = false;
 }
 
@@ -294,7 +314,7 @@ void EditorState::save()
 {
 	if (m_input.isModifierDown(ALLEGRO_KEYMOD_CTRL))
 	{
-		if (saveMap(map, "mapdata/data.bin", view)) saved = true;
+		saveMap(map, "mapdata/data.bin", view);
 	}
 }
 void EditorState::load()
@@ -305,7 +325,6 @@ void EditorState::load()
 		{
 			undo_stack.clear();
 			redo_stack.clear();
-			saved = true;
 		}
 	}
 }
@@ -338,25 +357,28 @@ void EditorState::redo()
 
 void EditorState::zoomToCursor(bool zoom_out)
 {
-	vec2f prev_pos = screenToWorld(m_input.getMousePos(), view);
+	vec2d prev_pos = screenToWorld(m_input.getMousePos(), view);
 
 	if (zoom_out)
 	{
 		if (view.scale.x > MIN_ZOOM)
 		{
-			view.scale -= { 0.1f, 0.1f };
-			if (view.scale.x <= 0.001f) view.scale.x = MIN_ZOOM;
-			if (view.scale.y <= 0.001f) view.scale.y = MIN_ZOOM;
+			view.scale -= { ZOOM_FACTOR, ZOOM_FACTOR };
 		}
 	}
 	else
 	{
 		if (view.scale.x < MAX_ZOOM)
 		{
-			view.scale += { 0.1f, 0.1f };
+			view.scale += { ZOOM_FACTOR, ZOOM_FACTOR };
 		}
 	}
 
-	vec2f new_pos = screenToWorld(m_input.getMousePos(), view);
+	vec2d new_pos = screenToWorld(m_input.getMousePos(), view);
 	view.world_pos += prev_pos - new_pos;
+}
+
+bool EditorState::isMouseInView()
+{
+	return m_input.getMousePos().isInBounds(view.screen_pos, view.screen_pos + view.size);
 }

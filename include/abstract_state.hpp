@@ -18,7 +18,7 @@ public:
 	virtual void resume() = 0;
 
 	virtual void handleEvents(const ALLEGRO_EVENT &ev) = 0;
-	virtual void update(float delta_time) = 0;
+	virtual void update(double delta_time) = 0;
 	virtual void draw() = 0;
 
 protected:

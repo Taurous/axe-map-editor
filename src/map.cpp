@@ -43,6 +43,8 @@ bool createMap(Map& m, std::string path, int ts)
 
 	m.v_tiles.resize(m.width * m.height, false);
 
+	m.needs_save = false;
+
 	return true;
 }
 
@@ -58,6 +60,7 @@ void clearMap(Map& m)
 	m.height = 0;
 	m.path = "";
 	m.tile_size = 0;
+	m.needs_save = false;
 
 	m.v_tiles.clear();
 }
@@ -73,7 +76,7 @@ bool reloadMap(Map& m)
 	return createMap(m, m.path, m.tile_size);
 }
 
-bool saveMap(const Map& m, std::string file, const View& v)
+bool saveMap(Map& m, std::string file, const View& v)
 {
 	//TODO Make this little-endian
 	/*	File Format
@@ -114,6 +117,9 @@ bool saveMap(const Map& m, std::string file, const View& v)
 		//out.write(reinterpret_cast<const char *>(m.v_tiles[0]), m.v_tiles.size() * sizeof(bool));
 
 		out.close();
+
+		m.needs_save = false;
+		return true;
 	}
 
 	return false;
@@ -160,6 +166,9 @@ bool loadMap(Map& m, std::string file, View &v, bool restore_view)
 		}
 
 		in.close();
+
+		m.needs_save = false;
+		return true;
 	}
 
 	return false;
@@ -177,12 +186,12 @@ void drawMap(const Map& m, const View& v, bool draw_grid, bool show_hidden)
 	{
 		for (int y = vis_tl.y; y <= vis_br.y; ++y)
 		{
-			if (m.v_tiles[y * m.width + x]) drawBitmapRegion(v, m.bmp, vec2f{x * m.tile_size, y * m.tile_size}, vec2f{m.tile_size, m.tile_size}, vec2f{x * m.tile_size, y * m.tile_size}, 0);
-			else if (show_hidden) drawTintedBitmapRegion(v, m.bmp, vec2f{x * m.tile_size, y * m.tile_size}, vec2f{m.tile_size, m.tile_size}, vec2f{x * m.tile_size, y * m.tile_size}, al_map_rgba(100, 100, 100, 100), 0);
+			if (m.v_tiles[y * m.width + x]) drawBitmapRegion(v, m.bmp, vec2d(x * m.tile_size, y * m.tile_size), vec2d(m.tile_size, m.tile_size), vec2d(x * m.tile_size, y * m.tile_size), 0);
+			else if (show_hidden) drawTintedBitmapRegion(v, m.bmp, vec2d(x * m.tile_size, y * m.tile_size), vec2d(m.tile_size, m.tile_size), vec2d(x * m.tile_size, y * m.tile_size), al_map_rgba(100, 100, 100, 100), 0);
 			else
 			{
-				vec2f top_left {x * m.tile_size, y * m.tile_size};
-				vec2f bottom_right = top_left + vec2f{m.tile_size, m.tile_size};
+				vec2d top_left(x * m.tile_size, y * m.tile_size);
+				vec2d bottom_right = top_left + vec2d(m.tile_size, m.tile_size);
 				drawFilledRectangle(v, top_left, bottom_right, al_map_rgb(back_col, back_col, back_col));
 			}
 		}
@@ -194,12 +203,12 @@ void drawMap(const Map& m, const View& v, bool draw_grid, bool show_hidden)
 	{
 		for (int x = vis_tl.x; x <= vis_br.x + 1; ++x)
 		{
-			drawLine(v, {x * m.tile_size, vis_tl.y * m.tile_size}, {x * m.tile_size, vis_br.y * m.tile_size + m.tile_size}, al_map_rgb(40, 40, 40), 1);
+			drawLine(v, vec2d(x * m.tile_size, vis_tl.y * m.tile_size), vec2d(x * m.tile_size, vis_br.y * m.tile_size + m.tile_size), al_map_rgb(40, 40, 40), 1);
 		}
 
 		for (int y = vis_tl.y; y <= vis_br.y + 1; ++y)
 		{
-			drawLine(v, {vis_tl.x * m.tile_size, y * m.tile_size}, {vis_br.x * m.tile_size + m.tile_size, y * m.tile_size}, al_map_rgb(40, 40, 40), 1);
+			drawLine(v, vec2d(vis_tl.x * m.tile_size, y * m.tile_size), vec2d(vis_br.x * m.tile_size + m.tile_size, y * m.tile_size), al_map_rgb(40, 40, 40), 1);
 		}
 	}
 }
@@ -219,6 +228,8 @@ void setTile(Map &m, const vec2i& p, bool show)
 		int index = p.y * m.width + p.x;
 
 		m.v_tiles[index] = show;
+
+		m.needs_save = true;
 	}
 }
 bool isTileShown(const Map& m, const vec2i& p)
@@ -241,9 +252,9 @@ void getVisibleTileRect(const Map& m, const View& v, vec2i& tl, vec2i& br)
 	br.y = std::min((int)floor((v.world_pos.y + (v.size.y / 2 / v.scale.y)) / m.tile_size), m.height - 1);
 }
 
-vec2i getTilePos(const Map& m, const View& v, const vec2f& screen_pos)
+vec2i getTilePos(const Map& m, const View& v, const vec2d& screen_pos)
 {
-	vec2f p = screenToWorld(screen_pos, v);
+	vec2d p = screenToWorld(screen_pos, v);
 	vec2i n;
 
 	n.x = (int)floor(p.x / m.tile_size);
