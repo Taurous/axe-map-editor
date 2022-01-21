@@ -4,18 +4,12 @@
 
 #include "vec.hpp"
 
-class View
+struct View
 {
-public:
-	View() : world_pos({ 0, 0 }), screen_pos({ 0, 0 }), scale({ 1, 1 }), size({ 0, 0 }) { }
-	~View() {}
-
 	vec2f world_pos;
 	vec2f screen_pos;
 	vec2f scale;
 	vec2f size;
-
-private:
 };
 
 vec2f worldToScreen(const vec2f& p, const View& v);

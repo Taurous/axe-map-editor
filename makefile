@@ -1,5 +1,5 @@
 CXX 		:= g++
-CXXFLAGS	:= -D_DEBUG -g -Wall `pkg-config --libs --cflags allegro-5 allegro_main-5 allegro_primitives-5 allegro_font-5 allegro_ttf-5 allegro_image-5 allegro_color-5` -std=c++1z
+CXXFLAGS	:= -D_DEBUG -g -Wall `pkg-config --libs --cflags allegro-5 allegro_main-5 allegro_primitives-5 allegro_font-5 allegro_ttf-5 allegro_image-5 allegro_color-5 allegro_dialog-5` -std=c++1z
 INCLUDE_DIR := include
 INCLUDE 	:= -I$(INCLUDE_DIR)
 

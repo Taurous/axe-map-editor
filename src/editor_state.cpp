@@ -65,23 +65,23 @@ void EditorState::pause()
 
 void EditorState::resume()
 {
-	m_input.setKeybind(MOUSE::WHEELUP, 		std::bind(&EditorState::onMouseWheelUp, this));
-	m_input.setKeybind(MOUSE::WHEELDOWN,	std::bind(&EditorState::onMouseWheelDown, this));
-	m_input.setKeybind(MOUSE::MIDDLE, 		std::bind(&EditorState::onMiddleMouseDown, this));
-	m_input.setKeybind(MOUSE::MIDDLE, 		std::bind(&EditorState::onMiddleMouseUp, this), false);
-	m_input.setKeybind(MOUSE::LEFT, 		std::bind(&EditorState::onLeftMouseDown, this));
-	m_input.setKeybind(MOUSE::LEFT, 		std::bind(&EditorState::onLeftMouseUp, this), false);
-	m_input.setKeybind(MOUSE::RIGHT, 		std::bind(&EditorState::onRightMouseDown, this));
-	m_input.setKeybind(MOUSE::RIGHT, 		std::bind(&EditorState::onRightMouseUp, this), false);
-	m_input.setKeybind(ALLEGRO_KEY_G,		[&](){ draw_grid = !draw_grid; });
-	m_input.setKeybind(ALLEGRO_KEY_Z, 		std::bind(&EditorState::undo, this));
-	m_input.setKeybind(ALLEGRO_KEY_Y, 		std::bind(&EditorState::redo, this));
-	m_input.setKeybind(ALLEGRO_KEY_S, 		std::bind(&EditorState::save, this));
-	m_input.setKeybind(ALLEGRO_KEY_L, 		std::bind(&EditorState::load, this));
-	m_input.setKeybind(ALLEGRO_KEY_F3,		[&](){ draw_debug = !draw_debug; });
-	m_input.setKeybind(ALLEGRO_KEY_C,		[&](){ if (m_input.isModifierDown(ALLEGRO_KEYMOD_CTRL)) view.world_pos = { 0, 0 }; });
-	m_input.setKeybind(ALLEGRO_KEY_R,		[&](){ view.scale = {1, 1}; });
-	m_input.setKeybind(ALLEGRO_KEY_SPACE,	[&](){ show_hidden = !show_hidden; });
+	m_input.setKeybind(MOUSE::WHEELUP, 		[this](){ onMouseWheelUp(); });
+	m_input.setKeybind(MOUSE::WHEELDOWN,	[this](){ onMouseWheelDown(); });
+	m_input.setKeybind(MOUSE::MIDDLE, 		[this](){ onMiddleMouseDown(); });
+	m_input.setKeybind(MOUSE::MIDDLE, 		[this](){ onMiddleMouseUp(); }, false);
+	m_input.setKeybind(MOUSE::LEFT, 		[this](){ onLeftMouseDown(); });
+	m_input.setKeybind(MOUSE::LEFT, 		[this](){ onLeftMouseUp(); }, false);
+	m_input.setKeybind(MOUSE::RIGHT, 		[this](){ onRightMouseDown(); });
+	m_input.setKeybind(MOUSE::RIGHT, 		[this](){ onRightMouseUp(); }, false);
+	m_input.setKeybind(ALLEGRO_KEY_G,		[this](){ draw_grid = !draw_grid; });
+	m_input.setKeybind(ALLEGRO_KEY_Z, 		[this](){ undo(); });
+	m_input.setKeybind(ALLEGRO_KEY_Y, 		[this](){ redo(); });
+	m_input.setKeybind(ALLEGRO_KEY_S, 		[this](){ save(); });
+	m_input.setKeybind(ALLEGRO_KEY_L, 		[this](){ load(); });
+	m_input.setKeybind(ALLEGRO_KEY_F3,		[this](){ draw_debug = !draw_debug; });
+	m_input.setKeybind(ALLEGRO_KEY_C,		[this](){ if (m_input.isModifierDown(ALLEGRO_KEYMOD_CTRL)) view.world_pos = { 0, 0 }; });
+	m_input.setKeybind(ALLEGRO_KEY_R,		[this](){ view.scale = {1, 1}; });
+	m_input.setKeybind(ALLEGRO_KEY_SPACE,	[this](){ show_hidden = !show_hidden; });
 }
 
 void EditorState::handleEvents(const ALLEGRO_EVENT &ev)
@@ -294,14 +294,14 @@ void EditorState::save()
 {
 	if (m_input.isModifierDown(ALLEGRO_KEYMOD_CTRL))
 	{
-		if (saveMap(map, "mapdata/data.xml", view)) saved = true;
+		if (saveMap(map, "mapdata/data.bin", view)) saved = true;
 	}
 }
 void EditorState::load()
 {
 	if (m_input.isModifierDown(ALLEGRO_KEYMOD_CTRL))
 	{
-		if (loadMap(map, "mapdata/data.xml", view, SAVE_VIEW))
+		if (loadMap(map, "mapdata/data.bin", view, SAVE_VIEW))
 		{
 			undo_stack.clear();
 			redo_stack.clear();

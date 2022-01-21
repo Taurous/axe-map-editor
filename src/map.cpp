@@ -1,10 +1,20 @@
 #include "map.hpp"
 
 #include <iostream> // for debugging
+#include <iomanip>
+#include <fstream>
 #include <math.h> // floor
 
 #include <allegro5/allegro.h>
 #include <allegro5/allegro_primitives.h>
+
+#define cchar_cast(x) reinterpret_cast<const char*>(&x)
+#define char_cast(x) reinterpret_cast<char*>(&x)
+
+constexpr char MAGIC[] = {'M', 'D', 'F'};
+constexpr uint16_t version = 0x0100;
+
+void printFile(std::string path);
 
 bool createMap(Map& m, std::string path, int ts)
 {
@@ -65,13 +75,93 @@ bool reloadMap(Map& m)
 
 bool saveMap(const Map& m, std::string file, const View& v)
 {
-	
+	//TODO Make this little-endian
+	/*	File Format
+		Data to Save:
+			path to map image
+			width
+			height
+			tile_size
+			tile vector
+
+			view position
+			view scale
+	*/
+
+	std::ofstream out(file, std::ofstream::out | std::ofstream::binary);
+
+	if (out.is_open())
+	{
+		//Write Magic Bits to identify file
+		out.write(MAGIC, sizeof(char)*3);
+		//Write version of file
+		out.write(cchar_cast(version), sizeof(version));
+
+		//Write View position and scale
+		out.write(cchar_cast(v.world_pos), sizeof(v.world_pos));
+		out.write(cchar_cast(v.scale), sizeof(v.scale));
+
+		//Write size of path, then path
+		size_t path_sz = m.path.size();
+		out.write(char_cast(path_sz), sizeof(path_sz));
+		out.write(m.path.c_str(), path_sz);
+
+		//Write Map data
+		out.write(cchar_cast(m.width), sizeof(m.width));
+		out.write(cchar_cast(m.height), sizeof(m.height));
+		out.write(cchar_cast(m.tile_size), sizeof(m.tile_size));
+		std::copy(m.v_tiles.begin(), m.v_tiles.end(), std::ostreambuf_iterator<char>(out));
+		//out.write(reinterpret_cast<const char *>(m.v_tiles[0]), m.v_tiles.size() * sizeof(bool));
+
+		out.close();
+	}
+
 	return false;
 }
 
 bool loadMap(Map& m, std::string file, View &v, bool restore_view)
 {
-	
+	View temp_view;
+	Map temp_map;
+
+	std::ifstream in(file, std::ifstream::in | std::ifstream::binary);
+
+	if (in.is_open())
+	{
+		char buf[3];
+		uint16_t r_version = 0;
+
+		in.read(buf, sizeof(char) * 3);
+		in.read(char_cast(r_version), sizeof(r_version));
+
+		if (std::string(buf) == std::string(MAGIC) && version == r_version)
+		{
+			in.read(char_cast(temp_view.world_pos), sizeof(temp_view.world_pos));
+			in.read(char_cast(temp_view.scale), sizeof(temp_view.scale));
+
+			size_t path_sz = 0;
+			in.read(char_cast(path_sz), sizeof(path_sz));
+
+			char path_buf[path_sz];
+			in.read(path_buf, sizeof(char) * path_sz);
+			temp_map.path = std::string(path_buf);
+
+			in.read(char_cast(temp_map.width), sizeof(temp_map.width));
+			in.read(char_cast(temp_map.height), sizeof(temp_map.height));
+			in.read(char_cast(temp_map.tile_size), sizeof(temp_map.tile_size));
+
+			temp_map.v_tiles = std::vector<bool>(std::istreambuf_iterator<char>(in), std::istreambuf_iterator<char>());
+
+			temp_map.bmp = m.bmp;
+			if (m.bmp == nullptr) temp_map.bmp = al_load_bitmap(temp_map.path.c_str());
+			m = temp_map;
+			v.scale = temp_view.scale;
+			v.world_pos = temp_view.world_pos;
+		}
+
+		in.close();
+	}
+
 	return false;
 }
 
@@ -162,4 +252,34 @@ vec2i getTilePos(const Map& m, const View& v, const vec2f& screen_pos)
 	return n;
 }
 
+void printFile(std::string path)
+{
+	std::ifstream in(path, std::ifstream::in | std::ifstream::binary);
+	
+	if (in.is_open())
+	{
+		std::cout << "Reading File" << std::endl;
+		char *buffer;
 
+		in.seekg(0, in.end);
+		long size = in.tellg();
+		in.seekg(0);
+
+		buffer = new char[size];
+
+		in.read(buffer, size);
+
+		std::cout << "Size: "  << size << " bytes\n";
+
+		for (int i = 0; i < size; i+= 16)
+		{
+			int s = i + 16;
+			for (int j = i; j < s && j < size; ++j)
+			{
+				std::cout << std::setfill('0') << std::setw(2) << std::hex << static_cast<int>(buffer[j] & 0xFF) << " ";
+			}
+			std::cout << "\n";
+		}
+		std::cout << "\n";
+	}
+}
