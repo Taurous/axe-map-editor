@@ -40,15 +40,6 @@ EditorState::EditorState(StateMachine& state_machine, InputHandler& input)
 	resizeView(view);
 
 	last_tile_hovered = { -1, -1 };
-
-	btn = Button({getScreenSize().x - 190, getScreenSize().y - 55},
-			{180, 50},
-			"Test Button",
-			al_map_rgb(128, 20, 150),
-			al_map_rgb(29, 29, 29),
-			al_map_rgb(255, 0, 255),
-			fn);
-	btn.setCallback([this](){ save(); });
 }
 
 EditorState::~EditorState()
@@ -195,8 +186,6 @@ void EditorState::draw()
 		world_tile.x, world_tile.y);
 	if (map.needs_save) al_draw_text(fn, al_map_rgb(255, 255, 255), screen_dim.x - 16, 16, ALLEGRO_ALIGN_CENTER, "*");
 
-	btn.draw();
-
 	//Debug
 	if (draw_debug)
 	{
@@ -266,14 +255,6 @@ void EditorState::onLeftMouseUp()
 			tiles_to_edit.clear();
 		}
 	}
-	else
-	{
-		if (btn.isMouseHovering(m_input.getMousePos()))
-		{
-			btn.setState(BTN_STATE::DEFAULT);
-			btn();
-		}
-	}
 	filling = false;
 }
 void EditorState::onLeftMouseDown()
@@ -288,13 +269,6 @@ void EditorState::onLeftMouseDown()
 		else if (!isTileShown(map, getTilePos(map, view, m_input.getMousePos())))
 		{
 			addTileToEditVector(getTilePos(map, view, m_input.getMousePos()), true);
-		}
-	}
-	else
-	{
-		if (btn.isMouseHovering(m_input.getMousePos()))
-		{
-			btn.setState(BTN_STATE::PRESSED);
 		}
 	}
 }
