@@ -1,5 +1,3 @@
-bin/*
-build/*
-deps/*
-mapdata/*
-log/*
+build/
+mapdata/
+log/
