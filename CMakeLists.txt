@@ -1,24 +1,20 @@
 cmake_minimum_required(VERSION 3.16.3)
 
-if(CMAKE_HOST_WIN32)
-    set(EXTENSION .exe)
-else()
-    set(EXTENSION "")
-endif()
-
 project(axe-map-editor)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED true)
+set(CMAKE_CXX_FLAGS "-g -Wall -D_DEBUG")
 
 find_package(PkgConfig REQUIRED)
 
-add_executable(${PROJECT_NAME}${EXTENSION}
+add_executable(${PROJECT_NAME}
     src/util.cpp
     src/view.cpp
     src/input.cpp
     src/map.cpp
     src/state_machine.cpp
+    src/file_chooser_state.cpp
     src/editor_state.cpp
     src/main.cpp
 )

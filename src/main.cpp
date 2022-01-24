@@ -93,7 +93,7 @@ int main(int argc, char ** argv)
 	m_sm.pushState(std::make_unique<EditorState>(m_sm, m_input));
 
 	// Set program lifetime keybinds
-	m_input.setKeybind(ALLEGRO_KEY_ESCAPE, [&m_sm](){ m_sm.quit(); });
+	//m_input.setKeybind(ALLEGRO_KEY_ESCAPE, [&m_sm](){ m_sm.quit(); });
 
 	bool redraw = true;
 	al_start_timer(timer);
@@ -136,7 +136,7 @@ int main(int argc, char ** argv)
 		{
 			al_clear_to_color(al_map_rgb(0, 0, 0));
 
-			m_sm.draw(false);
+			m_sm.draw(true);
 
 			al_flip_display();
 

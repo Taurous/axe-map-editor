@@ -9,6 +9,8 @@
 #include "state_machine.hpp"
 #include "util.hpp"
 
+#include "file_chooser_state.hpp"
+
 constexpr int BOTTOM_BAR_HEIGHT = 64;
 constexpr size_t UNDO_STACK_LIMIT = 50;
 constexpr double MIN_ZOOM = 0.13;
@@ -28,7 +30,7 @@ void resizeView(View &v)
 EditorState::EditorState(StateMachine& state_machine, InputHandler& input)
 	: AbstractState(state_machine, input), fn(nullptr), dragging(false), filling(false), show_hidden(false), draw_grid(true), draw_debug(false)
 {
-	fn = al_load_font("resources/tex/Retro Gaming.ttf", 22, 0);
+	fn = al_load_font("../resources/tex/Retro Gaming.ttf", 22, 0);
 
 	createMap(map, "/home/aksel/Downloads/Maps of the Mad Mage-20220114T044344Z-001/Maps of the Mad Mage/L1_grid.jpg", 100);
 	save_file = {"mapdata.bin"};
@@ -63,6 +65,7 @@ void EditorState::pause()
 	m_input.clearKeybind(ALLEGRO_KEY_C);
 	m_input.clearKeybind(ALLEGRO_KEY_R);
 	m_input.clearKeybind(ALLEGRO_KEY_SPACE);
+	m_input.clearKeybind(ALLEGRO_KEY_F);
 }
 
 void EditorState::resume()
@@ -84,6 +87,7 @@ void EditorState::resume()
 	m_input.setKeybind(ALLEGRO_KEY_C,		[this](){ if (m_input.isModifierDown(ALLEGRO_KEYMOD_CTRL)) view.world_pos = { 0, 0 }; });
 	m_input.setKeybind(ALLEGRO_KEY_R,		[this](){ view.scale = {1, 1}; });
 	m_input.setKeybind(ALLEGRO_KEY_SPACE,	[this](){ show_hidden = !show_hidden; });
+	m_input.setKeybind(ALLEGRO_KEY_F,		[this](){ if (m_input.isModifierDown(ALLEGRO_KEYMOD_SHIFT)) m_states.pushState(std::make_unique<FCState>(m_states, m_input)); });
 }
 
 void EditorState::handleEvents(const ALLEGRO_EVENT &ev)

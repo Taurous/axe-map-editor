@@ -53,8 +53,5 @@
         "cinttypes": "cpp",
         "typeinfo": "cpp",
         "map": "cpp"
-    },
-    "C_Cpp.default.includePath": [
-        "${workspaceFolder}/include/**"
-    ]
+    }
 }
