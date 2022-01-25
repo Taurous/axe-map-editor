@@ -23,7 +23,6 @@ pkg_check_modules(ALLEGRO5 REQUIRED allegro-5 allegro_main-5 allegro_primitives-
 target_link_libraries(${PROJECT_NAME} ${ALLEGRO5_LIBRARIES})
 
 target_include_directories(${PROJECT_NAME} PRIVATE
-    src
     include
     ${ALLEGRO5_INCLUDE_DIRS}
 )

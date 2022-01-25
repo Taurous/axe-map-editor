@@ -26,10 +26,11 @@
 #include <allegro5/allegro_ttf.h>
 #include <allegro5/allegro_image.h>
 #include <allegro5/allegro_primitives.h>
+#include <allegro5/allegro_native_dialog.h>
 
-#include "input.hpp"
 #include "state_machine.hpp"
 #include "editor_state.hpp"
+#include "input.hpp"
 
 constexpr int DEFAULT_WIND_WIDTH	= 1400;
 constexpr int DEFAULT_WIND_HEIGHT	= 900;
@@ -78,6 +79,7 @@ int main(int argc, char ** argv)
 	al_init_font_addon();
 	al_init_ttf_addon();
 	al_init_primitives_addon();
+	al_init_native_dialog_addon();
 
 	timer = al_create_timer(1.f / 60.f);
 	ev_queue = al_create_event_queue();

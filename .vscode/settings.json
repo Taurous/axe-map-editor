@@ -53,5 +53,6 @@
         "cinttypes": "cpp",
         "typeinfo": "cpp",
         "map": "cpp"
-    }
+    },
+    "cmake.sourceDirectory": "${workspaceFolder}/."
 }

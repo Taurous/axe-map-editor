@@ -1,5 +1,7 @@
 #pragma once
 
+#include <allegro5/allegro.h>
+#include <allegro5/allegro_native_dialog.h>
 #include "abstract_state.hpp"
 
 class FCState : public AbstractState
@@ -16,5 +18,5 @@ public:
 	void update(double delta_time) override;
 	void draw() override;
 private:
-
+	ALLEGRO_FILECHOOSER *fc;
 };
