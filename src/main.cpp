@@ -28,27 +28,44 @@
 #include <allegro5/allegro_primitives.h>
 #include <allegro5/allegro_native_dialog.h>
 
-#include "state_machine.hpp"
-#include "editor_state.hpp"
 #include "input.hpp"
+#include "util.hpp"
+
+#include "map_editor.hpp"
 
 constexpr int DEFAULT_WIND_WIDTH	= 1400;
 constexpr int DEFAULT_WIND_HEIGHT	= 900;
-std::string   DISPLAY_TITLE			= "Battle Maps";
+std::string   DISPLAY_TITLE			= "Axe DnD Map Viewer";
+
+/*std::string chooseImage()
+{
+	std::string path = "";
+
+	ALLEGRO_FILECHOOSER *fc = al_create_native_file_dialog(NULL, "Choose Map Image", "*.png;*.jpg;*.jpeg", ALLEGRO_FILECHOOSER_FILE_MUST_EXIST);
+    if (al_show_native_file_dialog(NULL, fc))
+    {
+        int num_files = al_get_native_file_dialog_count(fc);
+
+        if (num_files)
+		{
+			path = al_get_native_file_dialog_path(fc, 0);
+		}
+
+        al_destroy_native_file_dialog(fc);
+    }
+
+	return path;
+}*/
+
+void printAllegroVersion();
 
 int main(int argc, char ** argv)
 {
-	uint32_t version = al_get_allegro_version();
-	int major = version >> 24;
-	int minor = (version >> 16) & 255;
-	int revision = (version >> 8) & 255;
-	int release = version & 255;
-
-	printf("Allegro version %i.%i.%i[%i]\n", major, minor, revision, release);
-
 	ALLEGRO_DISPLAY		*main_display	= nullptr;
 	ALLEGRO_EVENT_QUEUE *ev_queue		= nullptr;
 	ALLEGRO_TIMER		*timer			= nullptr;
+	bool redraw = true;
+	bool quit = false;
 
 #ifndef _DEBUG
 	std::ofstream log("errorlog.txt");
@@ -75,13 +92,15 @@ int main(int argc, char ** argv)
 		exit(EXIT_FAILURE);
 	}
 
+	al_set_target_backbuffer(main_display);
+
 	al_init_image_addon();
 	al_init_font_addon();
 	al_init_ttf_addon();
 	al_init_primitives_addon();
 	al_init_native_dialog_addon();
 
-	timer = al_create_timer(1.f / 60.f);
+	timer = al_create_timer(1.0 / 60.0);
 	ev_queue = al_create_event_queue();
 
 	InputHandler m_input; // Installs keyboard and mouse
@@ -91,16 +110,14 @@ int main(int argc, char ** argv)
 	al_register_event_source(ev_queue, al_get_timer_event_source(timer));
 	al_register_event_source(ev_queue, al_get_display_event_source(main_display));
 
-	StateMachine m_sm;
-	m_sm.pushState(std::make_unique<EditorState>(m_sm, m_input));
+	MapEditor map_editor(m_input, {0, 0}, getScreenSize());
 
 	// Set program lifetime keybinds
-	//m_input.setKeybind(ALLEGRO_KEY_ESCAPE, [&m_sm](){ m_sm.quit(); });
+	m_input.setKeybind(ALLEGRO_KEY_ESCAPE, [&quit](){ quit = true; });
 
-	bool redraw = true;
 	al_start_timer(timer);
 	auto last_time = std::chrono::steady_clock::now();
-	while (m_sm.running())
+	while (!quit)
 	{
 		ALLEGRO_EVENT ev;
 		std::chrono::steady_clock::time_point current_time;
@@ -108,28 +125,26 @@ int main(int argc, char ** argv)
 
 		al_wait_for_event(ev_queue, &ev);
 
-		if (ev.type == ALLEGRO_EVENT_DISPLAY_RESIZE) al_acknowledge_resize(ev.display.source);
-
 		m_input.getInput(ev);
-		m_sm.handleEvents(ev);
+		map_editor.handleEvents(ev);
 		
 		switch (ev.type)
 		{
+			case ALLEGRO_EVENT_DISPLAY_RESIZE:
+				al_acknowledge_resize(main_display);
+				map_editor.resizeView({0, 0}, getScreenSize());
+			break;
+
 			case ALLEGRO_EVENT_DISPLAY_CLOSE:
-				m_sm.quit();
+				quit = true;
 			break;
 
 			case ALLEGRO_EVENT_TIMER:
 				current_time = std::chrono::steady_clock::now();
 				delta_time = std::chrono::duration<double>(current_time - last_time).count();
 				last_time = current_time;
-				m_sm.update(delta_time);
-				m_sm.removeDeadStates();
-				redraw = !redraw;
-			break;
-
-			default:
-			break;
+				map_editor.update(delta_time);
+				redraw = true;
 		}
 
 		//Drawing
@@ -138,7 +153,7 @@ int main(int argc, char ** argv)
 		{
 			al_clear_to_color(al_map_rgb(0, 0, 0));
 
-			m_sm.draw(true);
+			map_editor.draw();
 
 			al_flip_display();
 
@@ -159,4 +174,15 @@ int main(int argc, char ** argv)
 #endif
 
 	return 0;
+}
+
+void printAllegroVersion()
+{
+	uint32_t version = al_get_allegro_version();
+	int major = version >> 24;
+	int minor = (version >> 16) & 255;
+	int revision = (version >> 8) & 255;
+	int release = version & 255;
+
+	printf("Allegro version %i.%i.%i[%i]\n", major, minor, revision, release);
 }

@@ -2,14 +2,10 @@
 #include <math.h>
 #include <functional>
 #include <allegro5/allegro_color.h>
+#include <allegro5/allegro_native_dialog.h>
 
-#include "editor_state.hpp"
-
-#include "input.hpp"
-#include "state_machine.hpp"
+#include "map_editor.hpp"
 #include "util.hpp"
-
-#include "file_chooser_state.hpp"
 
 constexpr int BOTTOM_BAR_HEIGHT = 64;
 constexpr size_t UNDO_STACK_LIMIT = 50;
@@ -19,57 +15,24 @@ constexpr double ZOOM_FACTOR = 0.08;
 
 constexpr bool SAVE_VIEW = true;
 
-void resizeView(View &v)
+void MapEditor::resizeView(vec2i view_pos, vec2i view_size)
 {
-	vec2d screen_size = getScreenSize();
-
-	v.size.x = screen_size.x;
-	v.size.y = screen_size.y - BOTTOM_BAR_HEIGHT;
+	view.size = view_size;
+	view.screen_pos = view_pos;
 }
 
-EditorState::EditorState(StateMachine& state_machine, InputHandler& input)
-	: AbstractState(state_machine, input), fn(nullptr), dragging(false), filling(false), show_hidden(false), draw_grid(true), draw_debug(false)
+MapEditor::MapEditor(InputHandler& input, vec2i view_pos, vec2i view_size) : m_input(input), dragging(false), filling(false), show_hidden(false), draw_grid(true)
 {
-	fn = al_load_font("../resources/tex/Retro Gaming.ttf", 22, 0);
-
 	createMap(map, "/home/aksel/Downloads/Maps of the Mad Mage-20220114T044344Z-001/Maps of the Mad Mage/L1_grid.jpg", 100);
 	save_file = {"mapdata.bin"};
 
 	view.world_pos = { 0.0, 0.0 };
-	view.screen_pos = { 0, 0 };
 	view.scale = { 1.0, 1.0 };
 
-	resizeView(view);
+	resizeView(view_pos, view_size);
 
 	last_tile_hovered = { -1, -1 };
-}
 
-EditorState::~EditorState()
-{
-	al_destroy_font(fn);
-}
-
-void EditorState::pause()
-{
-	m_input.clearKeybind(MOUSE::WHEELUP);
-	m_input.clearKeybind(MOUSE::WHEELDOWN);
-	m_input.clearKeybind(MOUSE::MIDDLE);
-	m_input.clearKeybind(MOUSE::LEFT);
-	m_input.clearKeybind(MOUSE::RIGHT);
-	m_input.clearKeybind(ALLEGRO_KEY_G);
-	m_input.clearKeybind(ALLEGRO_KEY_Z);
-	m_input.clearKeybind(ALLEGRO_KEY_Y);
-	m_input.clearKeybind(ALLEGRO_KEY_S);
-	m_input.clearKeybind(ALLEGRO_KEY_L);
-	m_input.clearKeybind(ALLEGRO_KEY_F3);
-	m_input.clearKeybind(ALLEGRO_KEY_C);
-	m_input.clearKeybind(ALLEGRO_KEY_R);
-	m_input.clearKeybind(ALLEGRO_KEY_SPACE);
-	m_input.clearKeybind(ALLEGRO_KEY_F);
-}
-
-void EditorState::resume()
-{
 	m_input.setKeybind(MOUSE::WHEELUP, 		[this](){ onMouseWheelUp(); });
 	m_input.setKeybind(MOUSE::WHEELDOWN,	[this](){ onMouseWheelDown(); });
 	m_input.setKeybind(MOUSE::MIDDLE, 		[this](){ onMiddleMouseDown(); });
@@ -83,24 +46,23 @@ void EditorState::resume()
 	m_input.setKeybind(ALLEGRO_KEY_Y, 		[this](){ redo(); });
 	m_input.setKeybind(ALLEGRO_KEY_S, 		[this](){ if (m_input.isModifierDown(ALLEGRO_KEYMOD_CTRL)) save(); });
 	m_input.setKeybind(ALLEGRO_KEY_L, 		[this](){ if (m_input.isModifierDown(ALLEGRO_KEYMOD_CTRL)) load(); });
-	m_input.setKeybind(ALLEGRO_KEY_F3,		[this](){ draw_debug = !draw_debug; });
 	m_input.setKeybind(ALLEGRO_KEY_C,		[this](){ if (m_input.isModifierDown(ALLEGRO_KEYMOD_CTRL)) view.world_pos = { 0, 0 }; });
 	m_input.setKeybind(ALLEGRO_KEY_R,		[this](){ view.scale = {1, 1}; });
 	m_input.setKeybind(ALLEGRO_KEY_SPACE,	[this](){ show_hidden = !show_hidden; });
-	m_input.setKeybind(ALLEGRO_KEY_F,		[this](){ if (m_input.isModifierDown(ALLEGRO_KEYMOD_SHIFT)) m_states.pushState(std::make_unique<FCState>(m_states, m_input)); });
 }
 
-void EditorState::handleEvents(const ALLEGRO_EVENT &ev)
+MapEditor::~MapEditor()
+{
+	al_destroy_bitmap(map.bmp);
+}
+
+void MapEditor::handleEvents(const ALLEGRO_EVENT &ev)
 {
 	vec2i cur_tile_hovered;
 	vec2i mouse = m_input.getMousePos();
 
 	switch (ev.type)
 	{
-		case ALLEGRO_EVENT_DISPLAY_RESIZE:
-			resizeView(view);
-		break;
-
 		case ALLEGRO_EVENT_MOUSE_AXES:
 			cur_tile_hovered = getTilePos(map, view, mouse);
 
@@ -120,6 +82,8 @@ void EditorState::handleEvents(const ALLEGRO_EVENT &ev)
 						if (isTileShown(map, cur_tile_hovered)) addTileToEditVector(cur_tile_hovered, false);
 					}
 				}
+
+				if (dragging) view.world_pos = vec2d(last_pos) + (vec2d(mouse_pos - m_input.getMousePos()) / view.scale);
 			}
 			last_tile_hovered = getTilePos(map, view, mouse);
 		break;
@@ -129,13 +93,8 @@ void EditorState::handleEvents(const ALLEGRO_EVENT &ev)
 	}	
 }
 
-void EditorState::update(double delta_time)
+void MapEditor::update(double delta_time)
 {
-	std::string window_title = "Axe Dungeon Map Editor - " + save_file;
-	if (map.needs_save) window_title += "*";
-	
-	al_set_window_title(al_get_current_display(), window_title.c_str());
-
 	if (!m_input.isMouseDown(MOUSE::MIDDLE))
 	{
 		vec2d direction{ 0,0 };
@@ -149,13 +108,11 @@ void EditorState::update(double delta_time)
 
 		view.world_pos += normalize(direction) * vel * delta_time;
 	}
-	else if (dragging) view.world_pos = vec2d(last_pos) + (vec2d(mouse_pos - m_input.getMousePos()) / view.scale);
 }
 
-void EditorState::draw()
+void MapEditor::draw()
 {
 	// View Drawing, clipped
-
 	al_set_clipping_rectangle((int)view.screen_pos.x, (int)view.screen_pos.y, (int)view.size.x, (int)view.size.y);
 
 	drawMap(map, view, draw_grid, show_hidden);
@@ -176,45 +133,9 @@ void EditorState::draw()
 	}
 
 	al_reset_clipping_rectangle();
-
-	//Draw UI
-
-	vec2d screen_dim = getScreenSize();
-	vec2i world_tile = view.world_pos / vec2d(map.tile_size, map.tile_size);
-
-	al_draw_filled_rectangle(0, screen_dim.y - BOTTOM_BAR_HEIGHT, screen_dim.x, screen_dim.y, al_color_html("#d35400"));
-
-	al_draw_textf(fn, al_map_rgb(0, 0, 0), 100, screen_dim.y - (BOTTOM_BAR_HEIGHT / 2), ALLEGRO_ALIGN_CENTER, "Mouse: %i:%i",
-		last_tile_hovered.x, last_tile_hovered.y);
-	al_draw_textf(fn, al_map_rgb(0, 0, 0), 280, screen_dim.y - (BOTTOM_BAR_HEIGHT / 2), ALLEGRO_ALIGN_CENTER, "View: %i:%i",
-		world_tile.x, world_tile.y);
-	if (map.needs_save) al_draw_text(fn, al_map_rgb(255, 255, 255), screen_dim.x - 16, 16, ALLEGRO_ALIGN_CENTER, "*");
-
-	//Debug
-	if (draw_debug)
-	{
-		al_draw_textf(fn, al_map_rgb(255, 255, 255), 10, 10, 0, "undo stack size: %li", undo_stack.size());
-		al_draw_textf(fn, al_map_rgb(255, 255, 255), 10, 30, 0, "redo stack size: %li", redo_stack.size());
-		al_draw_textf(fn, al_map_rgb(255, 255, 255), 10, 50, 0, "view scale: %.4f", view.scale.x);
-		al_draw_textf(fn, al_map_rgb(255, 255, 255), 10, 70, 0, "in view: %s", isMouseInView() ? "true" : "false");
-		al_draw_textf(fn, al_map_rgb(255, 255, 255), 10, 90, 0, "%s", m_input.getMousePos().str().c_str());
-		
-		//Draw reticle in center of view
-		al_draw_line(view.screen_pos.x + (view.size.x / 2.0) - 8,
-		view.screen_pos.y + (view.size.y / 2.0),
-		view.screen_pos.x + (view.size.x / 2.0) + 8,
-		view.screen_pos.y + (view.size.y / 2.0),
-		al_map_rgb(255, 0, 0), 2);
-
-		al_draw_line(view.screen_pos.x + (view.size.x / 2.0),
-		view.screen_pos.y + (view.size.y / 2.0) - 8,
-		view.screen_pos.x + (view.size.x / 2.0),
-		view.screen_pos.y + (view.size.y / 2.0) + 8,
-		al_map_rgb(255, 0, 0), 2);
-	}
 }
 
-void EditorState::pushCommand(std::unique_ptr<Command> c)
+void MapEditor::pushCommand(std::unique_ptr<Command> c)
 {
 	undo_stack.push_back(std::move(c));
 
@@ -224,19 +145,19 @@ void EditorState::pushCommand(std::unique_ptr<Command> c)
 	if (undo_stack.size() > UNDO_STACK_LIMIT) undo_stack.pop_front();
 }
 
-void EditorState::onMouseWheelUp()
+void MapEditor::onMouseWheelUp()
 {
 	if (isMouseInView()) zoomToCursor(false);
 }
-void EditorState::onMouseWheelDown()
+void MapEditor::onMouseWheelDown()
 {
 	if (isMouseInView()) zoomToCursor(true);
 }
-void EditorState::onMiddleMouseUp()
+void MapEditor::onMiddleMouseUp()
 {
 	dragging = false;
 }
-void EditorState::onMiddleMouseDown()
+void MapEditor::onMiddleMouseDown()
 {
 	if (isMouseInView())
 	{
@@ -245,7 +166,7 @@ void EditorState::onMiddleMouseDown()
 		dragging = true;
 	}
 }
-void EditorState::onLeftMouseUp()
+void MapEditor::onLeftMouseUp()
 {
 	if (isMouseInView())
 	{
@@ -261,7 +182,7 @@ void EditorState::onLeftMouseUp()
 	}
 	filling = false;
 }
-void EditorState::onLeftMouseDown()
+void MapEditor::onLeftMouseDown()
 {
 	if (isMouseInView())
 	{
@@ -276,7 +197,7 @@ void EditorState::onLeftMouseDown()
 		}
 	}
 }
-void EditorState::onRightMouseDown()
+void MapEditor::onRightMouseDown()
 {
 	if (isMouseInView())
 	{
@@ -291,7 +212,7 @@ void EditorState::onRightMouseDown()
 		}
 	}
 }
-void EditorState::onRightMouseUp()
+void MapEditor::onRightMouseUp()
 {
 	if (isMouseInView())
 	{
@@ -308,17 +229,17 @@ void EditorState::onRightMouseUp()
 	filling = false;
 }
 
-void EditorState::addTileToEditVector(vec2i position, bool show)
+void MapEditor::addTileToEditVector(vec2i position, bool show)
 {
 	tiles_to_edit.push_back(position);
 	setTile(map, position, show);
 }
 
-void EditorState::save()
+void MapEditor::save()
 {
 	saveMap(map, "mapdata/data.bin", view);
 }
-void EditorState::load()
+void MapEditor::load()
 {
 	if (loadMap(map, "mapdata/data.bin", view, SAVE_VIEW))
 	{
@@ -327,7 +248,7 @@ void EditorState::load()
 	}
 }
 
-void EditorState::undo()
+void MapEditor::undo()
 {
 	if (!undo_stack.empty() && m_input.isModifierDown(ALLEGRO_KEYMOD_CTRL))
 	{
@@ -340,7 +261,7 @@ void EditorState::undo()
 	}
 }
 
-void EditorState::redo()
+void MapEditor::redo()
 {
 	if (!redo_stack.empty() && m_input.isModifierDown(ALLEGRO_KEYMOD_CTRL))
 	{
@@ -353,7 +274,7 @@ void EditorState::redo()
 	}
 }
 
-void EditorState::zoomToCursor(bool zoom_out)
+void MapEditor::zoomToCursor(bool zoom_out)
 {
 	vec2d prev_pos = screenToWorld(m_input.getMousePos(), view);
 
@@ -376,7 +297,7 @@ void EditorState::zoomToCursor(bool zoom_out)
 	view.world_pos += prev_pos - new_pos;
 }
 
-bool EditorState::isMouseInView()
+bool MapEditor::isMouseInView()
 {
 	return m_input.getMousePos().isInBounds(view.screen_pos, view.screen_pos + view.size);
 }
