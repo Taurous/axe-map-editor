@@ -1,11 +1,3 @@
 # axe-map-editor
 
-This is a practice project where I am developing a tile-based-map editor.
-
-Libraries in use:
-```
-Allegro 5
-TinyXML2
-```
-
-Developing for Linux and Windows.
+This is a learning project. I am still in the planning and experimenting phase.
