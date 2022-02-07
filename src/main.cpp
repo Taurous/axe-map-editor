@@ -35,29 +35,8 @@
 
 constexpr int DEFAULT_WIND_WIDTH	= 1400;
 constexpr int DEFAULT_WIND_HEIGHT	= 900;
+constexpr int CONSOLE_HEIGHT		= 256;
 std::string   DISPLAY_TITLE			= "Axe DnD Map Viewer";
-
-/*std::string chooseImage()
-{
-	std::string path = "";
-
-	ALLEGRO_FILECHOOSER *fc = al_create_native_file_dialog(NULL, "Choose Map Image", "*.png;*.jpg;*.jpeg", ALLEGRO_FILECHOOSER_FILE_MUST_EXIST);
-    if (al_show_native_file_dialog(NULL, fc))
-    {
-        int num_files = al_get_native_file_dialog_count(fc);
-
-        if (num_files)
-		{
-			path = al_get_native_file_dialog_path(fc, 0);
-		}
-
-        al_destroy_native_file_dialog(fc);
-    }
-
-	return path;
-}*/
-
-void printAllegroVersion();
 
 int main(int argc, char ** argv)
 {
@@ -66,15 +45,6 @@ int main(int argc, char ** argv)
 	ALLEGRO_TIMER		*timer			= nullptr;
 	bool redraw = true;
 	bool quit = false;
-
-#ifndef _DEBUG
-	std::ofstream log("errorlog.txt");
-	std::streambuf *oldbf;
-	if (log.is_open())
-	{
-		oldbf = std::cerr.rdbuf(log.rdbuf());
-	}
-#endif
 
 	if (!al_init())
 	{
@@ -92,8 +62,6 @@ int main(int argc, char ** argv)
 		exit(EXIT_FAILURE);
 	}
 
-	al_set_target_backbuffer(main_display);
-
 	al_init_image_addon();
 	al_init_font_addon();
 	al_init_ttf_addon();
@@ -110,7 +78,7 @@ int main(int argc, char ** argv)
 	al_register_event_source(ev_queue, al_get_timer_event_source(timer));
 	al_register_event_source(ev_queue, al_get_display_event_source(main_display));
 
-	MapEditor map_editor(m_input, {0, 0}, getScreenSize());
+	MapEditor map_editor(m_input, {0, 0}, { getScreenSize().x, getScreenSize().y - CONSOLE_HEIGHT });
 
 	// Set program lifetime keybinds
 	m_input.setKeybind(ALLEGRO_KEY_ESCAPE, [&quit](){ quit = true; });
@@ -132,7 +100,7 @@ int main(int argc, char ** argv)
 		{
 			case ALLEGRO_EVENT_DISPLAY_RESIZE:
 				al_acknowledge_resize(main_display);
-				map_editor.resizeView({0, 0}, getScreenSize());
+				map_editor.resizeView({0, 0}, { getScreenSize().x, getScreenSize().y - CONSOLE_HEIGHT });
 			break;
 
 			case ALLEGRO_EVENT_DISPLAY_CLOSE:
@@ -165,24 +133,5 @@ int main(int argc, char ** argv)
 	al_destroy_event_queue(ev_queue);
 	al_destroy_display(main_display);
 
-#ifndef _DEBUG
-	if (log.is_open())
-	{
-		log.close();
-		std::cerr.rdbuf(oldbf);
-	}
-#endif
-
 	return 0;
-}
-
-void printAllegroVersion()
-{
-	uint32_t version = al_get_allegro_version();
-	int major = version >> 24;
-	int minor = (version >> 16) & 255;
-	int revision = (version >> 8) & 255;
-	int release = version & 255;
-
-	printf("Allegro version %i.%i.%i[%i]\n", major, minor, revision, release);
 }

@@ -168,65 +168,60 @@ void MapEditor::onMiddleMouseDown()
 }
 void MapEditor::onLeftMouseUp()
 {
-	if (isMouseInView())
+	if (m_input.isModifierDown(ALLEGRO_KEYMOD_SHIFT) && filling)
 	{
-		if (m_input.isModifierDown(ALLEGRO_KEYMOD_SHIFT) && filling)
-		{
-			pushCommand(std::make_unique<FillTileCommand>(map, true, fill_start_pos, getTilePos(map, view, m_input.getMousePos())));
-		}
-		else
-		{
-			if (!tiles_to_edit.empty()) pushCommand(std::make_unique<SetTileCommand>(map, tiles_to_edit, true));
-			tiles_to_edit.clear();
-		}
+		pushCommand(std::make_unique<FillTileCommand>(map, true, fill_start_pos, getTilePos(map, view, m_input.getMousePos())));
 	}
+	else if (!tiles_to_edit.empty())
+	{
+		pushCommand(std::make_unique<SetTileCommand>(map, tiles_to_edit, true));
+		tiles_to_edit.clear();
+	}
+
 	filling = false;
 }
 void MapEditor::onLeftMouseDown()
 {
-	if (isMouseInView())
+	if (!isMouseInView()) return;
+
+	if (m_input.isModifierDown(ALLEGRO_KEYMOD_SHIFT) && !filling)
 	{
-		if (m_input.isModifierDown(ALLEGRO_KEYMOD_SHIFT))
-		{
-			filling = true;
-			fill_start_pos = getTilePos(map, view, m_input.getMousePos());
-		}
-		else if (!isTileShown(map, getTilePos(map, view, m_input.getMousePos())))
-		{
-			addTileToEditVector(getTilePos(map, view, m_input.getMousePos()), true);
-		}
+		filling = true;
+		fill_start_pos = getTilePos(map, view, m_input.getMousePos());
 	}
+	else if (!isTileShown(map, getTilePos(map, view, m_input.getMousePos())))
+	{
+		addTileToEditVector(getTilePos(map, view, m_input.getMousePos()), true);
+	}
+}
+
+void MapEditor::onRightMouseUp()
+{
+	if (m_input.isModifierDown(ALLEGRO_KEYMOD_SHIFT) && filling)
+	{
+		pushCommand(std::make_unique<FillTileCommand>(map, false, fill_start_pos, getTilePos(map, view, m_input.getMousePos())));
+	}
+	else if (!tiles_to_edit.empty())
+	{
+		pushCommand(std::make_unique<SetTileCommand>(map, tiles_to_edit, false));
+		tiles_to_edit.clear();
+	}
+
+	filling = false;
 }
 void MapEditor::onRightMouseDown()
 {
-	if (isMouseInView())
+	if (!isMouseInView()) return;
+	
+	if (m_input.isModifierDown(ALLEGRO_KEYMOD_SHIFT) && !filling)
 	{
-		if (m_input.isModifierDown(ALLEGRO_KEYMOD_SHIFT))
-		{
-			filling = true;
-			fill_start_pos = getTilePos(map, view, m_input.getMousePos());
-		}
-		else if (isTileShown(map, getTilePos(map, view, m_input.getMousePos())))
-		{
-			addTileToEditVector(getTilePos(map, view, m_input.getMousePos()), false);
-		}
+		filling = true;
+		fill_start_pos = getTilePos(map, view, m_input.getMousePos());
 	}
-}
-void MapEditor::onRightMouseUp()
-{
-	if (isMouseInView())
+	else if (isTileShown(map, getTilePos(map, view, m_input.getMousePos())))
 	{
-		if (m_input.isModifierDown(ALLEGRO_KEYMOD_SHIFT) && filling)
-		{
-			pushCommand(std::make_unique<FillTileCommand>(map, false, fill_start_pos, getTilePos(map, view, m_input.getMousePos())));
-		}
-		else
-		{
-			if (!tiles_to_edit.empty()) pushCommand(std::make_unique<SetTileCommand>(map, tiles_to_edit, false));
-			tiles_to_edit.clear();
-		}
+		addTileToEditVector(getTilePos(map, view, m_input.getMousePos()), false);
 	}
-	filling = false;
 }
 
 void MapEditor::addTileToEditVector(vec2i position, bool show)

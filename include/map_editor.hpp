@@ -21,7 +21,6 @@ public:
 	void update(double delta_time);
 	void draw();
 
-	//Keybound Functions
 	void save();
 	void load();
 	void undo();
