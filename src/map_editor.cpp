@@ -6,6 +6,7 @@
 
 #include "map_editor.hpp"
 #include "util.hpp"
+#include "editor_events.hpp"
 
 constexpr int BOTTOM_BAR_HEIGHT = 64;
 constexpr size_t UNDO_STACK_LIMIT = 50;
@@ -21,7 +22,8 @@ void MapEditor::resizeView(vec2i view_pos, vec2i view_size)
 	view.screen_pos = view_pos;
 }
 
-MapEditor::MapEditor(InputHandler& input, vec2i view_pos, vec2i view_size) : m_input(input), dragging(false), filling(false), show_hidden(false), draw_grid(true)
+MapEditor::MapEditor(InputHandler& input, ALLEGRO_EVENT_SOURCE& event_source, vec2i view_pos, vec2i view_size)
+	: m_input(input), m_event_source(event_source), dragging(false), filling(false), show_hidden(false), draw_grid(true)
 {
 	createMap(map, "/home/aksel/Downloads/Maps of the Mad Mage-20220114T044344Z-001/Maps of the Mad Mage/L1_grid.jpg", 100);
 	save_file = {"mapdata.bin"};
@@ -49,6 +51,18 @@ MapEditor::MapEditor(InputHandler& input, vec2i view_pos, vec2i view_size) : m_i
 	m_input.setKeybind(ALLEGRO_KEY_C,		[this](){ if (m_input.isModifierDown(ALLEGRO_KEYMOD_CTRL)) view.world_pos = { 0, 0 }; });
 	m_input.setKeybind(ALLEGRO_KEY_R,		[this](){ view.scale = {1, 1}; });
 	m_input.setKeybind(ALLEGRO_KEY_SPACE,	[this](){ show_hidden = !show_hidden; });
+	m_input.setKeybind(ALLEGRO_KEY_UP,		[this](){
+		ALLEGRO_EVENT editor_event;
+		editor_event.user.type = AXE_EDITOR_EVENT_SCALE_VIEW;
+		editor_event.user.data1 = -1;
+		al_emit_user_event(&m_event_source, &editor_event, nullptr);
+	});
+	m_input.setKeybind(ALLEGRO_KEY_DOWN,	[this](){
+		ALLEGRO_EVENT editor_event;
+		editor_event.user.type = AXE_EDITOR_EVENT_SCALE_VIEW;
+		editor_event.user.data1 = 1;
+		al_emit_user_event(&m_event_source, &editor_event, nullptr);
+	});
 }
 
 MapEditor::~MapEditor()
@@ -101,10 +115,10 @@ void MapEditor::update(double delta_time)
 		double vel = 500.0;
 		if (m_input.isKeyDown(ALLEGRO_KEY_LSHIFT))	vel *= 2.5;
 
-		if (m_input.isKeyDown(ALLEGRO_KEY_LEFT)	|| m_input.isKeyDown(ALLEGRO_KEY_A)) direction.x -= 1.0;
-		if (m_input.isKeyDown(ALLEGRO_KEY_RIGHT)|| m_input.isKeyDown(ALLEGRO_KEY_D)) direction.x += 1.0;
-		if (m_input.isKeyDown(ALLEGRO_KEY_UP)	|| m_input.isKeyDown(ALLEGRO_KEY_W)) direction.y -= 1.0;
-		if (m_input.isKeyDown(ALLEGRO_KEY_DOWN)	|| (m_input.isKeyDown(ALLEGRO_KEY_S) && !m_input.isModifierDown(ALLEGRO_KEYMOD_CTRL))) direction.y += 1.0;
+		if (m_input.isKeyDown(ALLEGRO_KEY_A)) direction.x -= 1.0;
+		if (m_input.isKeyDown(ALLEGRO_KEY_D)) direction.x += 1.0;
+		if (m_input.isKeyDown(ALLEGRO_KEY_W)) direction.y -= 1.0;
+		if ((m_input.isKeyDown(ALLEGRO_KEY_S) && !m_input.isModifierDown(ALLEGRO_KEYMOD_CTRL))) direction.y += 1.0;
 
 		view.world_pos += normalize(direction) * vel * delta_time;
 	}
@@ -159,6 +173,17 @@ void MapEditor::onMiddleMouseUp()
 }
 void MapEditor::onMiddleMouseDown()
 {
+	if (m_input.isModifierDown(ALLEGRO_KEYMOD_CTRL))
+	{
+		ALLEGRO_EVENT editor_event;
+		editor_event.user.type = AXE_EDITOR_EVENT_MOVE_VIEW;
+		auto new_pos = screenToWorld(m_input.getMousePos(), view);
+		editor_event.user.data1 = new_pos.x;
+		editor_event.user.data2 = new_pos.y;
+		al_emit_user_event(&m_event_source, &editor_event, nullptr);
+		return;
+	}
+	
 	if (isMouseInView())
 	{
 		mouse_pos = m_input.getMousePos();
@@ -295,4 +320,9 @@ void MapEditor::zoomToCursor(bool zoom_out)
 bool MapEditor::isMouseInView()
 {
 	return m_input.getMousePos().isInBounds(view.screen_pos, view.screen_pos + view.size);
+}
+
+vec2i MapEditor::getViewPosition()
+{
+	return view.world_pos;
 }

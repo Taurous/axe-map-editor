@@ -14,7 +14,7 @@
 class MapEditor
 {
 public:
-	MapEditor(InputHandler& input, vec2i view_pos, vec2i view_size);
+	MapEditor(InputHandler& input, ALLEGRO_EVENT_SOURCE& event_source, vec2i view_pos, vec2i view_size);
 	~MapEditor();
 
 	void handleEvents(const ALLEGRO_EVENT &ev);
@@ -39,9 +39,11 @@ public:
 	bool isMouseInView();
 	void zoomToCursor(bool zoom_out);
 	void resizeView(vec2i view_pos, vec2i view_size);
+	vec2i getViewPosition();
 
 private: // TODO Reorganize
 	InputHandler &m_input;
+	ALLEGRO_EVENT_SOURCE &m_event_source;
 
 	View view;
 	Map map;

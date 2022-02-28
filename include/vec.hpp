@@ -3,6 +3,7 @@
 #include <tuple>
 #include <type_traits>
 #include <sstream>
+#include <cmath>
 
 template <typename T> class vec2;
 
@@ -88,5 +89,12 @@ template <typename T> vec2<T> normalize(const vec2<T>& v)
 	if (mag < 0.00001f) return vec2<T>(0, 0);
 	return vec2<T>(v.x / mag, v.y / mag);
 }
-
-template <typename T> T inverse(const vec2<T>& v1) { return vec2f{ 1.f / v1.x, 1.f / v1.y }; }
+template <typename T> vec2<T> absolute(const vec2<T>& v) { return vec2<T>{ abs(v.x), abs(v.y)}; }
+template <typename T> vec2<T> inverse(const vec2<T>& v1) { return vec2<T>{ 1.f / v1.x, 1.f / v1.y }; }
+template <typename T> vec2<T> vec_lerp(const vec2<T>& v1, const vec2<T>& v2, const double& t)
+{
+	vec2<T> ret_val;
+	ret_val.x = (v1.x * (1.0 - t)) + (v2.x * t);
+	ret_val.y = (v1.y * (1.0 - t)) + (v2.y * t);
+	return ret_val;
+}

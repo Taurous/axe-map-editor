@@ -1,0 +1,5 @@
+Functionality needed by Viewer:
+
+ - Map Bitmap (Must be loaded in viewer thread)
+ - It's own View
+ - Need to send commands that tell it where to move the view to, and what to set the scale to.

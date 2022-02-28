@@ -52,7 +52,7 @@ public:
 
 	void setKeybind(int key, std::function<void(void)> callback, bool onPressed = true);
 	void clearKeybind(int key);
-	void callKeybind(int key, bool pressed);
+	void callKeybind(int key, bool pressed = true);
 	
 private:
 	int mods;
