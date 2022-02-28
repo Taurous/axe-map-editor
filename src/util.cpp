@@ -1,4 +1,3 @@
-#include <allegro5/allegro.h>
 #include "util.hpp"
 
 vec2i getScreenSize()
@@ -15,4 +14,23 @@ void printAllegroVersion()
 	int release = version & 255;
 
 	printf("Allegro version %i.%i.%i[%i]\n", major, minor, revision, release);
+}
+
+ALLEGRO_DISPLAY *createDisplay(std::string title, int width, int height, int flags)
+{
+	ALLEGRO_DISPLAY *d = nullptr;
+
+	al_set_new_display_flags(flags);
+
+	al_set_new_window_title(title.c_str());
+
+	d = al_create_display(width, height);
+
+	if (!d)
+	{
+		std::cerr << "Failed to create display!" << std::endl;
+		exit(EXIT_FAILURE);
+	}
+
+	return d;
 }

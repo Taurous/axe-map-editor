@@ -1,6 +1,7 @@
-#ifndef UTIL_H
-#define UTIL_H
+#pragma once
 
+#include <iostream>
+#include <allegro5/allegro.h>
 #include "vec.hpp"
 
 vec2i getScreenSize();
@@ -44,4 +45,4 @@ constexpr inline double easeOutBack(double t)
     return 1.0 + c2 * (tminus * tminus * tminus) + c1 * (tminus * tminus);
 }
 
-#endif
+ALLEGRO_DISPLAY *createDisplay(std::string title, int width, int height, int flags);
