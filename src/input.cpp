@@ -13,11 +13,9 @@ InputHandler::InputHandler() : mods(0)
 	al_install_keyboard();
 	al_install_mouse();
 
-	al_get_mouse_state(&m_prev_mouse_state);
-	m_cur_mouse_state = m_prev_mouse_state;
-
-	al_get_keyboard_state(&m_prev_key_state);
-	m_cur_key_state = m_prev_key_state;
+	memset(keys_pressed, false, sizeof(bool) * ALLEGRO_MODIFIED_KEY_MAX);
+	memset(keys_held, false, sizeof(bool) * ALLEGRO_MODIFIED_KEY_MAX);
+	memset(keys_released, false, sizeof(bool) * ALLEGRO_MODIFIED_KEY_MAX);
 }
 
 InputHandler::~InputHandler()
@@ -28,35 +26,53 @@ InputHandler::~InputHandler()
 
 void InputHandler::getInput(const ALLEGRO_EVENT &ev)
 {
-	m_prev_mouse_state = m_cur_mouse_state;
-	al_get_mouse_state(&m_cur_mouse_state);
+	memset(keys_pressed, false, sizeof(bool) * ALLEGRO_MODIFIED_KEY_MAX);
+	memset(keys_released, false, sizeof(bool) * ALLEGRO_MODIFIED_KEY_MAX);
 
-	m_prev_key_state = m_cur_key_state;
-	al_get_keyboard_state(&m_cur_key_state);
+	mouse_wheel_down = false;
+	mouse_wheel_up = false;
 
 	switch (ev.type)
 	{
 		case ALLEGRO_EVENT_MOUSE_AXES:
-			if (ev.mouse.dz > 0) callKeybind(MOUSE::WHEELUP, true);
-			else if (ev.mouse.dz < 0) callKeybind(MOUSE::WHEELDOWN, true);
+			if (ev.mouse.dz > 0)
+			{
+				callKeybind(MOUSE::WHEELUP, true);
+				mouse_wheel_up = true;
+			}
+			else if (ev.mouse.dz < 0)
+			{
+				callKeybind(MOUSE::WHEELDOWN, true);
+				mouse_wheel_down = true;
+			}
+
+			mouse_position = { ev.mouse.x, ev.mouse.y };
 		break;
 
 		case ALLEGRO_EVENT_MOUSE_BUTTON_DOWN:
 			callKeybind(ALLEGRO_KEY_MAX + ev.mouse.button, true);
+			keys_pressed[ALLEGRO_KEY_MAX + ev.mouse.button] = true;
+			keys_held[ALLEGRO_KEY_MAX + ev.mouse.button] = true;
 		break;
 
 		case ALLEGRO_EVENT_MOUSE_BUTTON_UP:
 			callKeybind(ALLEGRO_KEY_MAX + ev.mouse.button, false);
+			keys_released[ALLEGRO_KEY_MAX + ev.mouse.button] = true;
+			keys_held[ALLEGRO_KEY_MAX + ev.mouse.button] = false;
 		break;
 
 		case ALLEGRO_EVENT_KEY_DOWN:
 			mods = ev.keyboard.modifiers;
 			callKeybind(ev.keyboard.keycode, true);
+			keys_pressed[ev.keyboard.keycode] = true;
+			keys_held[ev.keyboard.keycode] = true;
 		break;
 
 		case ALLEGRO_EVENT_KEY_UP:
 			mods = ev.keyboard.modifiers;
 			callKeybind(ev.keyboard.keycode, false);
+			keys_released[ev.keyboard.keycode] = true;
+			keys_held[ev.keyboard.keycode] = false;
 		break;
 
 		default:
@@ -66,87 +82,42 @@ void InputHandler::getInput(const ALLEGRO_EVENT &ev)
 
 bool InputHandler::isKeyPressed(const int key, const int mod) const
 {
-	if (al_key_down(&m_cur_key_state, key) && !al_key_down(&m_prev_key_state, key))
-	{
-		if (mod == -1 || mod & mods) return true;
-	}
-
-	return false;
+	return keys_pressed[key] && (mod == -1 || mod & mods);
 }
 bool InputHandler::isKeyReleased(const int key, const int mod) const
 {
-	if (al_key_down(&m_prev_key_state, key) && !al_key_down(&m_cur_key_state, key))
-	{
-		if (mod == -1 || mod & mods) return true;
-	}
-
-	return false;
+	return keys_released[key] && (mod == -1 || mod & mods);
 }
 bool InputHandler::isKeyDown(const int key, const int mod) const
 {
-	if (al_key_down(&m_cur_key_state, key))
-	{
-		if (mod == -1 || mod & mods) return true;
-	}
-
-	return false;
+	return keys_held[key] && (mod == -1 || mod & mods);
 }
 
 bool InputHandler::isMousePressed(int button, const int mod) const
 {
-	button -= ALLEGRO_KEY_MAX;
-	if (al_mouse_button_down(&m_cur_mouse_state, button) && !al_mouse_button_down(&m_prev_mouse_state, button))
-	{
-		if (mod == -1 || mod & mods) return true;
-	}
-
-	return false;
+	return isKeyPressed(button, mod);
 }
 bool InputHandler::isMouseReleased(int button, const int mod) const
 {
-	button -= ALLEGRO_KEY_MAX;
-	if (al_mouse_button_down(&m_prev_mouse_state, button) && !al_mouse_button_down(&m_cur_mouse_state, button))
-	{
-		if (mod == -1 || mod & mods) return true;
-	}
-
-	return false;
+	return isKeyReleased(button, mod);
 }
 bool InputHandler::isMouseDown(int button, const int mod) const
 {
-	button -= ALLEGRO_KEY_MAX;
-	if (al_mouse_button_down(&m_cur_mouse_state, button))
-	{
-		if (mod == -1 || mod & mods) return true;
-	}
-
-	return false;
+	return isKeyDown(button, mod);
 }
 
 bool InputHandler::isMouseWheelDown(const int mod) const
 {
-	if (m_cur_mouse_state.z < m_prev_mouse_state.z && (mod == -1 || mod & mods))
-	{
-		return true;
-	}
-	else return false;
+	return mouse_wheel_down && (mod == -1 || mod & mods);
 }
 bool InputHandler::isMouseWheelUp(const int mod) const
 {
-	if (m_cur_mouse_state.z > m_prev_mouse_state.z && (mod == -1 || mod & mods))
-	{
-		return true;
-	}
-	else return false;
+	return mouse_wheel_up && (mod == -1 || mod & mods);
 }
 
 vec2i InputHandler::getMousePos(void) const
 {
-	return vec2i{m_cur_mouse_state.x, m_cur_mouse_state.y};
-}
-bool InputHandler::isMouseInWindow(void) const
-{
-	return (m_cur_mouse_state.display == al_get_current_display()); // TODO: Test with multiple displays
+	return mouse_position;
 }
 
 bool InputHandler::isModifierDown(const int mod)

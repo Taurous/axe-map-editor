@@ -33,16 +33,104 @@
 
 #include "map_editor.hpp"
 
-constexpr int DEFAULT_WIND_WIDTH	= 1400;
-constexpr int DEFAULT_WIND_HEIGHT	= 900;
-constexpr int CONSOLE_HEIGHT		= 256;
-std::string   DISPLAY_TITLE			= "Axe DnD Map Viewer";
+constexpr int 	DEFAULT_WIND_WIDTH	= 1400;
+constexpr int 	DEFAULT_WIND_HEIGHT	= 900;
+constexpr int 	CONSOLE_HEIGHT		= 256;
+constexpr char 	DISPLAY_TITLE[]		= "Axe DnD Map";
+
+using std_clk = std::chrono::steady_clock;
+
+ALLEGRO_DISPLAY *createDisplay(const char* title, int width, int height, int flags)
+{
+	ALLEGRO_DISPLAY *d = nullptr;
+
+	al_set_new_display_flags(flags);
+
+	std::string full_title = DISPLAY_TITLE;
+	full_title += " - ";
+	full_title += title;
+	al_set_new_window_title(full_title.c_str());
+
+	d = al_create_display(width, height);
+
+	if (!d)
+	{
+		std::cerr << "Failed to create display!" << std::endl;
+		exit(EXIT_FAILURE);
+	}
+
+	return d;
+}
+
+static void *thread_func(ALLEGRO_THREAD* thr, void* arg)
+{
+	ALLEGRO_DISPLAY* display = nullptr;
+	ALLEGRO_EVENT_QUEUE* evq = nullptr;
+	ALLEGRO_TIMER* timer = nullptr;
+	ALLEGRO_EVENT ev;
+	bool running = true;
+	bool redraw = true;
+
+	display = createDisplay("Viewer", DEFAULT_WIND_WIDTH, DEFAULT_WIND_HEIGHT, ALLEGRO_RESIZABLE | ALLEGRO_WINDOWED);
+	timer = al_create_timer(1.0 / 60.0);
+	evq = al_create_event_queue();
+
+	al_register_event_source(evq, al_get_timer_event_source(timer));
+	al_register_event_source(evq, al_get_display_event_source(display));
+
+	al_start_timer(timer);
+	while (running)
+	{
+		if (al_get_thread_should_stop(thr))
+		{
+			break;
+		}
+
+		al_wait_for_event(evq, &ev);
+
+		switch (ev.type)
+		{
+			case ALLEGRO_EVENT_TIMER:
+				redraw = true;
+			break;
+
+			case ALLEGRO_EVENT_DISPLAY_CLOSE:
+				running = false;
+			break;
+
+			case ALLEGRO_EVENT_DISPLAY_RESIZE:
+				al_acknowledge_resize(display);
+			break;
+
+			default:
+			break;
+		}
+
+		if (al_event_queue_is_empty(evq) && redraw)
+		{
+			al_clear_to_color(al_map_rgb(45, 45, 45));
+			al_flip_display();
+			redraw = false;
+		}
+	}
+
+	al_destroy_timer(timer);
+	al_destroy_event_queue(evq);
+	al_destroy_display(display);
+
+	return NULL;
+}
 
 int main(int argc, char ** argv)
 {
-	ALLEGRO_DISPLAY		*main_display	= nullptr;
-	ALLEGRO_EVENT_QUEUE *ev_queue		= nullptr;
-	ALLEGRO_TIMER		*timer			= nullptr;
+	ALLEGRO_DISPLAY*		main_display	= nullptr;
+	ALLEGRO_EVENT_QUEUE*	ev_queue		= nullptr;
+	ALLEGRO_TIMER*			timer			= nullptr;
+	ALLEGRO_THREAD*			view_thread		= nullptr;
+	ALLEGRO_EVENT ev;
+	std_clk::time_point current_time;
+	double delta_time;
+	
 	bool redraw = true;
 	bool quit = false;
 
@@ -52,15 +140,7 @@ int main(int argc, char ** argv)
 		exit(EXIT_FAILURE);
 	}
 
-	al_set_new_display_flags(ALLEGRO_WINDOWED | ALLEGRO_RESIZABLE);
-	al_set_new_window_title(DISPLAY_TITLE.c_str());
-	main_display = al_create_display(DEFAULT_WIND_WIDTH, DEFAULT_WIND_HEIGHT);
-
-	if (!main_display)
-	{
-		std::cerr << "Failed to create display!" << std::endl;
-		exit(EXIT_FAILURE);
-	}
+	main_display = createDisplay("Editor", DEFAULT_WIND_WIDTH, DEFAULT_WIND_HEIGHT, ALLEGRO_WINDOWED | ALLEGRO_RESIZABLE);
 
 	al_init_image_addon();
 	al_init_font_addon();
@@ -81,25 +161,42 @@ int main(int argc, char ** argv)
 	MapEditor map_editor(m_input, {0, 0}, { getScreenSize().x, getScreenSize().y - CONSOLE_HEIGHT });
 
 	// Set program lifetime keybinds
-	m_input.setKeybind(ALLEGRO_KEY_ESCAPE, [&quit](){ quit = true; });
+	m_input.setKeybind(ALLEGRO_KEY_ESCAPE, 	[&quit](){ quit = true; });
+	m_input.setKeybind(ALLEGRO_KEY_F1,		[&](){
+		al_destroy_thread(view_thread); // al_destroy_thread() safely returns null if supplied pointer is null
+		view_thread = nullptr;
+		view_thread = al_create_thread(thread_func, nullptr);
+		al_start_thread(view_thread);
+	});
 
 	al_start_timer(timer);
-	auto last_time = std::chrono::steady_clock::now();
+	auto last_time = std_clk::now();
 	while (!quit)
 	{
-		ALLEGRO_EVENT ev;
-		std::chrono::steady_clock::time_point current_time;
-		double delta_time;
-
 		al_wait_for_event(ev_queue, &ev);
+
+		if (ev.any.source == al_get_mouse_event_source())
+		{
+			if (ev.mouse.display != main_display)
+			{
+				continue;
+			}
+		}
+		else if (ev.any.source == al_get_keyboard_event_source())
+		{
+			if (ev.keyboard.display != main_display)
+			{
+				continue;
+			}
+		}
 
 		m_input.getInput(ev);
 		map_editor.handleEvents(ev);
-		
+	
 		switch (ev.type)
 		{
 			case ALLEGRO_EVENT_DISPLAY_RESIZE:
-				al_acknowledge_resize(main_display);
+				al_acknowledge_resize(ev.display.source);
 				map_editor.resizeView({0, 0}, { getScreenSize().x, getScreenSize().y - CONSOLE_HEIGHT });
 			break;
 
@@ -108,13 +205,17 @@ int main(int argc, char ** argv)
 			break;
 
 			case ALLEGRO_EVENT_TIMER:
-				current_time = std::chrono::steady_clock::now();
+				current_time = std_clk::now();
 				delta_time = std::chrono::duration<double>(current_time - last_time).count();
 				last_time = current_time;
 				map_editor.update(delta_time);
 				redraw = true;
-		}
+			break;
 
+			default:
+			break;
+		}
+		
 		//Drawing
 
 		if (al_event_queue_is_empty(ev_queue) && redraw)
@@ -129,9 +230,12 @@ int main(int argc, char ** argv)
 		}
 	}
 
+	if (view_thread) al_set_thread_should_stop(view_thread);
+
 	al_destroy_timer(timer);
 	al_destroy_event_queue(ev_queue);
 	al_destroy_display(main_display);
+	al_destroy_thread(view_thread);
 
 	return 0;
 }
