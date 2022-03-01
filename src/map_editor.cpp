@@ -22,11 +22,14 @@ void MapEditor::resizeView(vec2i view_pos, vec2i view_size)
 	view.screen_pos = view_pos;
 }
 
-MapEditor::MapEditor(InputHandler& input, ALLEGRO_EVENT_SOURCE& event_source, vec2i view_pos, vec2i view_size)
+MapEditor::MapEditor(const Map& in_map, InputHandler& input, ALLEGRO_EVENT_SOURCE& event_source, vec2i view_pos, vec2i view_size)
 	: m_input(input), m_event_source(event_source), dragging(false), filling(false), show_hidden(false), draw_grid(true)
 {
-	createMap(map, "/home/aksel/Downloads/Maps of the Mad Mage-20220114T044344Z-001/Maps of the Mad Mage/L1_grid.jpg", 100);
-	save_file = {"mapdata.bin"};
+	if (!createMap(map, in_map.path, in_map.tile_size))
+	{
+		std::cerr << "Failed to create map in MapEditor!" << std::endl;
+		exit(EXIT_FAILURE);
+	}
 
 	view.world_pos = { 0.0, 0.0 };
 	view.scale = { 1.0, 1.0 };
@@ -43,7 +46,7 @@ MapEditor::MapEditor(InputHandler& input, ALLEGRO_EVENT_SOURCE& event_source, ve
 	m_input.setKeybind(MOUSE::LEFT, 		[this](){ onLeftMouseUp(); }, false);
 	m_input.setKeybind(MOUSE::RIGHT, 		[this](){ onRightMouseDown(); });
 	m_input.setKeybind(MOUSE::RIGHT, 		[this](){ onRightMouseUp(); }, false);
-	m_input.setKeybind(ALLEGRO_KEY_G,		[this](){ draw_grid = !draw_grid; });
+	m_input.setKeybind(ALLEGRO_KEY_G,		[this](){ if (m_input.isModifierDown(ALLEGRO_KEYMOD_CTRL)) { fireEvent(AXE_EDITOR_EVENT_SHOWHIDE_GRID); return; } draw_grid = !draw_grid; });
 	m_input.setKeybind(ALLEGRO_KEY_Z, 		[this](){ undo(); });
 	m_input.setKeybind(ALLEGRO_KEY_Y, 		[this](){ redo(); });
 	m_input.setKeybind(ALLEGRO_KEY_S, 		[this](){ if (m_input.isModifierDown(ALLEGRO_KEYMOD_CTRL)) save(); });
@@ -51,18 +54,9 @@ MapEditor::MapEditor(InputHandler& input, ALLEGRO_EVENT_SOURCE& event_source, ve
 	m_input.setKeybind(ALLEGRO_KEY_C,		[this](){ if (m_input.isModifierDown(ALLEGRO_KEYMOD_CTRL)) view.world_pos = { 0, 0 }; });
 	m_input.setKeybind(ALLEGRO_KEY_R,		[this](){ view.scale = {1, 1}; });
 	m_input.setKeybind(ALLEGRO_KEY_SPACE,	[this](){ show_hidden = !show_hidden; });
-	m_input.setKeybind(ALLEGRO_KEY_UP,		[this](){
-		ALLEGRO_EVENT editor_event;
-		editor_event.user.type = AXE_EDITOR_EVENT_SCALE_VIEW;
-		editor_event.user.data1 = -1;
-		al_emit_user_event(&m_event_source, &editor_event, nullptr);
-	});
-	m_input.setKeybind(ALLEGRO_KEY_DOWN,	[this](){
-		ALLEGRO_EVENT editor_event;
-		editor_event.user.type = AXE_EDITOR_EVENT_SCALE_VIEW;
-		editor_event.user.data1 = 1;
-		al_emit_user_event(&m_event_source, &editor_event, nullptr);
-	});
+	m_input.setKeybind(ALLEGRO_KEY_UP,		[this](){ fireEvent(AXE_EDITOR_EVENT_ZOOM_IN); });
+	m_input.setKeybind(ALLEGRO_KEY_DOWN,	[this](){ fireEvent(AXE_EDITOR_EVENT_ZOOM_OUT); });
+	m_input.setKeybind(ALLEGRO_KEY_U,		[this](){ fireEvent(AXE_EDITOR_EVENT_COPY_DATA); });
 }
 
 MapEditor::~MapEditor()
@@ -175,12 +169,7 @@ void MapEditor::onMiddleMouseDown()
 {
 	if (m_input.isModifierDown(ALLEGRO_KEYMOD_CTRL))
 	{
-		ALLEGRO_EVENT editor_event;
-		editor_event.user.type = AXE_EDITOR_EVENT_MOVE_VIEW;
-		auto new_pos = screenToWorld(m_input.getMousePos(), view);
-		editor_event.user.data1 = new_pos.x;
-		editor_event.user.data2 = new_pos.y;
-		al_emit_user_event(&m_event_source, &editor_event, nullptr);
+		fireEvent(AXE_EDITOR_EVENT_MOVE_VIEW);
 		return;
 	}
 	
@@ -257,14 +246,17 @@ void MapEditor::addTileToEditVector(vec2i position, bool show)
 
 void MapEditor::save()
 {
-	saveMap(map, "mapdata/data.bin", view);
+	saveMap(map, "../mapdata/data.bin", view);
 }
 void MapEditor::load()
 {
-	if (loadMap(map, "mapdata/data.bin", view, SAVE_VIEW))
+	if (loadMap(map, "../mapdata/data.bin", view, SAVE_VIEW))
 	{
 		undo_stack.clear();
 		redo_stack.clear();
+
+		fireEvent(AXE_EDITOR_EVENT_COPY_DATA);
+		// save viewer postion and set it here
 	}
 }
 
@@ -322,7 +314,34 @@ bool MapEditor::isMouseInView()
 	return m_input.getMousePos().isInBounds(view.screen_pos, view.screen_pos + view.size);
 }
 
-vec2i MapEditor::getViewPosition()
+void MapEditor::fireEvent(int event_id)
 {
-	return view.world_pos;
+	ALLEGRO_EVENT editor_event;
+	editor_event.user.type = event_id;
+
+	//For AXE_EDITOR_EVENT_MOVE_VIEW
+	auto new_pos = screenToWorld(m_input.getMousePos(), view);
+
+	switch (event_id)
+	{
+		case AXE_EDITOR_EVENT_COPY_DATA:
+			editor_event.user.data1 = reinterpret_cast<intptr_t>(&map);
+		break;
+
+		case AXE_EDITOR_EVENT_MOVE_VIEW:
+			editor_event.user.data1 = new_pos.x;
+			editor_event.user.data2 = new_pos.y;
+		break;
+
+		case AXE_EDITOR_EVENT_ZOOM_IN: // Fall through
+		case AXE_EDITOR_EVENT_ZOOM_OUT: break;
+
+		case AXE_EDITOR_EVENT_SHOWHIDE_GRID: break;
+
+		default:
+			std::cerr << "Error: Invalid Event ID sent to MapEditor::fireEvent() - id: " << event_id << std::endl;
+		return;
+	}
+
+	al_emit_user_event(&m_event_source, &editor_event, nullptr);
 }

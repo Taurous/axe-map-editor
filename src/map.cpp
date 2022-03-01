@@ -34,7 +34,7 @@ bool createMap(Map& m, std::string path, int ts)
 
 	if (!m.bmp)
 	{
-		std::cerr << "Failed to load map: " << m.path << std::endl;
+		std::cerr << "Failed to load image: " << m.path << std::endl;
 		return false;
 	}
 
@@ -130,7 +130,7 @@ bool loadMap(Map& m, std::string file, View &v, bool restore_view)
 	View temp_view;
 	Map temp_map;
 
-	std::ifstream in(file, std::ifstream::in | std::ifstream::binary);
+	std::ifstream in(file, std::ifstream::binary);
 
 	if (in.is_open())
 	{

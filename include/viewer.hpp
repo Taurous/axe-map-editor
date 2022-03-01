@@ -8,13 +8,14 @@
 #include "vec.hpp"
 #include "util.hpp"
 #include "view.hpp"
+#include "map.hpp"
 #include "editor_events.hpp"
 
 using std_clk = std::chrono::steady_clock;
 
 struct ThreadArgs
 {
-	std::string bmp_path;
+	Map in_map;
     vec2i display_size;
     std::string display_title;
 
@@ -36,12 +37,18 @@ static void *thread_func(ALLEGRO_THREAD* thr, void* arg)
 
 	ThreadArgs *thargs = (ThreadArgs*)arg;
 	View view;
+	view.size = thargs->display_size;
+	view.screen_pos = { 0, 0 };
+	view.scale = { 1, 1 };
+	view.world_pos = { 0, 0 };
+	Map map;
+	bool grid = true;
+
 	bool lerping = false;
 	constexpr double lerp_time = 1.5;
 	double elapsed = 0.0;
 	vec2d view_start;
 	vec2d view_target;
-	ALLEGRO_BITMAP* bmp;
 
 	display = createDisplay(thargs->display_title.c_str(), thargs->display_size.x, thargs->display_size.y, ALLEGRO_RESIZABLE | ALLEGRO_WINDOWED);
 	timer = al_create_timer(1.0 / 60.0);
@@ -51,10 +58,10 @@ static void *thread_func(ALLEGRO_THREAD* thr, void* arg)
 	al_register_event_source(evq, al_get_display_event_source(display));
 	al_register_event_source(evq, thargs->event_source);
 
-	bmp = al_load_bitmap(thargs->bmp_path.c_str());
-	if (!bmp)
+	if (!createMap(map, thargs->in_map.path, thargs->in_map.tile_size))
 	{
 		std::cerr << "Failed to load bitmap in thread" << std::endl;
+		std::cerr << "\tbmp_path = " << thargs->in_map.path << std::endl;
 		if (display) al_destroy_display(display);
 		if (timer) al_destroy_timer(timer);
 		if (evq) al_destroy_event_queue(evq);
@@ -73,8 +80,19 @@ static void *thread_func(ALLEGRO_THREAD* thr, void* arg)
 		al_wait_for_event(evq, &ev);
 	
 		vec2d diff;
+		Map *t_map;
 		switch (ev.type)
 		{
+			case AXE_EDITOR_EVENT_SHOWHIDE_GRID:
+				grid = !grid;
+			break;
+
+			case AXE_EDITOR_EVENT_COPY_DATA:
+				t_map = reinterpret_cast<Map*>(ev.user.data1);
+				map.v_tiles = t_map->v_tiles;
+				t_map = nullptr; // DO NOT CACHE ev.user.data1!
+			break;
+
 			case AXE_EDITOR_EVENT_MOVE_VIEW:
 				view_target.x = static_cast<double>(ev.user.data1);
 				view_target.y = static_cast<double>(ev.user.data2);
@@ -83,16 +101,12 @@ static void *thread_func(ALLEGRO_THREAD* thr, void* arg)
 				elapsed = 0.0;
 			break;
 
-			case AXE_EDITOR_EVENT_SCALE_VIEW:
-				std::cout << "AXE_EDITOR_EVENT_SCALE_VIEW\n" << "\tev.user.data1 = " << ev.user.data1 << "\n";
-				if (ev.user.data1 > 0)
-				{
-					view.scale += { 0.1, 0.1 };
-				}
-				else if (ev.user.data1 < 0)
-				{
-					view.scale -= { 0.1, 0.1 };
-				}
+			case AXE_EDITOR_EVENT_ZOOM_IN:
+				if (view.scale.x < 5.0) view.scale += { 0.1, 0.1 };
+			break;
+
+			case AXE_EDITOR_EVENT_ZOOM_OUT:
+				if (view.scale.x > 0.1) view.scale -= { 0.1, 0.1 };
 			break;
 
 			case ALLEGRO_EVENT_TIMER:
@@ -115,6 +129,7 @@ static void *thread_func(ALLEGRO_THREAD* thr, void* arg)
 
 			case ALLEGRO_EVENT_DISPLAY_RESIZE:
 				al_acknowledge_resize(display);
+				view.size = { al_get_display_width(display), al_get_display_height(display) };
 			break;
 
 			default:
@@ -123,19 +138,17 @@ static void *thread_func(ALLEGRO_THREAD* thr, void* arg)
 
 		if (al_event_queue_is_empty(evq) && redraw)
 		{
-			al_clear_to_color(al_map_rgb(45, 45, 45));
+			al_clear_to_color(al_map_rgb(0, 0, 0));
 
-			int w = al_get_display_width(display);
-			int h = al_get_display_height(display);
-
-			al_draw_bitmap_region(bmp, view.world_pos.x - (w/2),view.world_pos.y - (h/2), w, h, 0, 0, 0);
+			drawMap(map, view, grid, false);
 
 			al_flip_display();
 			redraw = false;
 		}
 	}
 
-	al_destroy_bitmap(bmp);
+	clearMap(map);
+
 	al_destroy_timer(timer);
 	al_destroy_event_queue(evq);
 	al_destroy_display(display);

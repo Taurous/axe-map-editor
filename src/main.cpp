@@ -38,13 +38,22 @@
 
 constexpr int 	DEFAULT_WIND_WIDTH	= 1400;
 constexpr int 	DEFAULT_WIND_HEIGHT	= 900;
-constexpr int 	CONSOLE_HEIGHT		= 256;
 constexpr char 	DISPLAY_TITLE[]		= "Axe DnD Map";
 
 using std_clk = std::chrono::steady_clock;
 
 int main(int argc, char ** argv)
 {
+	if (argc < 3)
+	{
+		std::cout << "Usage: axe-map-editor <path-to-map-image> <tile-size>" << std::endl;
+		return -1;
+	}
+
+	Map in_map;
+	in_map.path = argv[1];
+	in_map.tile_size = atoi(argv[2]);
+
 	ALLEGRO_DISPLAY*		main_display	= nullptr;
 	ALLEGRO_EVENT_QUEUE*	ev_queue		= nullptr;
 	ALLEGRO_TIMER*			timer			= nullptr;
@@ -57,7 +66,7 @@ int main(int argc, char ** argv)
 	bool quit = false;
 
 	ThreadArgs thargs;
-	thargs.bmp_path = "/home/aksel/Downloads/Maps of the Mad Mage-20220114T044344Z-001/Maps of the Mad Mage/L1_grid.jpg";
+	thargs.in_map = in_map;
 	thargs.mutex = al_create_mutex();
 	thargs.cond = al_create_cond();
 
@@ -94,7 +103,7 @@ int main(int argc, char ** argv)
 	thargs.display_title = std::string(DISPLAY_TITLE) + " - Viewer";
 	thargs.display_size = { DEFAULT_WIND_WIDTH, DEFAULT_WIND_HEIGHT };
 
-	MapEditor map_editor(m_input, editor_event_source, {0, 0}, { getScreenSize().x, getScreenSize().y - CONSOLE_HEIGHT });
+	MapEditor map_editor(in_map, m_input, editor_event_source, {0, 0}, { getScreenSize().x, getScreenSize().y });
 
 	// Set program lifetime keybinds
 	m_input.setKeybind(ALLEGRO_KEY_ESCAPE, 	[&quit](){ quit = true; });
@@ -107,6 +116,7 @@ int main(int argc, char ** argv)
 
 		view_thread = al_create_thread(thread_func, &thargs);
 		al_start_thread(view_thread);
+		map_editor.fireEvent(AXE_EDITOR_EVENT_COPY_DATA);	
 	});
 
 	m_input.callKeybind(ALLEGRO_KEY_F1);
@@ -140,7 +150,7 @@ int main(int argc, char ** argv)
 		{
 			case ALLEGRO_EVENT_DISPLAY_RESIZE:
 				al_acknowledge_resize(ev.display.source);
-				map_editor.resizeView({0, 0}, { getScreenSize().x, getScreenSize().y - CONSOLE_HEIGHT });
+				map_editor.resizeView({0, 0}, { getScreenSize().x, getScreenSize().y });
 			break;
 
 			case ALLEGRO_EVENT_DISPLAY_CLOSE:
