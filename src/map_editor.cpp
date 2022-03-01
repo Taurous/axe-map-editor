@@ -170,6 +170,7 @@ void MapEditor::onMiddleMouseDown()
 	if (m_input.isModifierDown(ALLEGRO_KEYMOD_CTRL))
 	{
 		fireEvent(AXE_EDITOR_EVENT_MOVE_VIEW);
+		fireEvent(AXE_EDITOR_EVENT_COPY_DATA);
 		return;
 	}
 	

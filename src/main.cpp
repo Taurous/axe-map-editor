@@ -44,15 +44,15 @@ using std_clk = std::chrono::steady_clock;
 
 int main(int argc, char ** argv)
 {
-	if (argc < 3)
+	/*if (argc < 3)
 	{
 		std::cout << "Usage: axe-map-editor <path-to-map-image> <tile-size>" << std::endl;
 		return -1;
-	}
+	}*/
 
 	Map in_map;
-	in_map.path = argv[1];
-	in_map.tile_size = atoi(argv[2]);
+	in_map.path = "/home/aksel/Downloads/map_32x32(2).png";//argv[1];
+	in_map.tile_size = 100;//atoi(argv[2]);
 
 	ALLEGRO_DISPLAY*		main_display	= nullptr;
 	ALLEGRO_EVENT_QUEUE*	ev_queue		= nullptr;
