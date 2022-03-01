@@ -1,48 +1,34 @@
 #pragma once
 
 #include "view.hpp"
-#include "tilemap.hpp"
 
 #include <vector>
-#include <bitset>
-#include <memory>
 
-struct Tile
+struct Map
 {
-	int id = -1;
-	vec2i pos;
+	ALLEGRO_BITMAP* bmp = nullptr;
+	std::string path;
+	int width;
+	int height;
+	int tile_size;
+	bool needs_save;
+
+	std::vector<bool> v_tiles;
 };
 
-class Map
-{
-public:
-	Map();
-	~Map();
+bool createMap(Map& m, std::string path_to_map, int tile_size);
+void clearMap(Map& m);
+bool reloadMap(Map& m);
 
-	bool isEditable()
-	{
-		return editable;
-	}
+bool saveMap(Map& m, std::string file, const View& v);
+bool loadMap(Map& m, std::string file, View& v, bool restore_view);
 
-	void draw(const View& v, bool grid);
-	void sortMapVisibilty(const View& v);
-	void getVisibleTileRect(const View& v, vec2i& tl, vec2i& br);
+void drawMap(const Map& m, const View& v, bool draw_grid, bool show_hidden);
 
-	void setTilemap(std::string path, vec2i tile_size);
-	ALLEGRO_BITMAP* getTilemapBitmap();
-	void insertTile(Tile t);
-	void removeTile(const vec2i& p);
-	vec2i getTilePos(const View& v, const vec2f& screen_pos);
-	Tile getTile(const vec2i& p);
+void hideTile(Map& m, const vec2i& position);
+void showTile(Map& m, const vec2i& position);
+void setTile(Map& m, const vec2i& position, bool show);
+bool isTileShown(const Map& m, const vec2i& position);
 
-	void create(std::string tilemap_path, vec2i tile_size);
-	bool save(std::string file, const View& v);
-	bool load(std::string file, View& v, bool restore_view);
-
-	std::vector<Tile> v_tiles;
-	std::vector<Tile>::iterator it_visible_begin;
-	std::unique_ptr<Tilemap> tilemap;
-
-private:
-	bool editable;
-};
+vec2i getTilePos(const Map& m, const View& v, const vec2d& screen_pos);
+void getVisibleTileRect(const Map& m, const View& v, vec2i& tl, vec2i& br);

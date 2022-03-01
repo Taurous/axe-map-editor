@@ -1,66 +1,33 @@
 #pragma once
 
 #include <vector>
+#include <memory>
 
 #include "command.hpp"
 
 #include "vec.hpp"
 #include "map.hpp"
 
-class InsertTileCommand : public Command
+class SetTileCommand : public Command
 {
 public:
-	InsertTileCommand(Map& map, Tile tile) : m(map), t(tile)
-	{
-		prev_t.id = m.getTile(t.pos).id;
-		prev_t.pos = t.pos;
-		redo();
-	}
-
-	void redo() override
-	{
-		m.insertTile(t);
-	}
-	void undo() override
-	{
-		if (prev_t.id < 0) m.removeTile(prev_t.pos); // If previous tile is non positive that means it was empty, delete tile rather than place empty tile
-		else m.insertTile(prev_t);
-	}
+	SetTileCommand(Map& map, vec2i position, bool show) : m(map), s(show) { p.push_back(position); redo(); }
+	SetTileCommand(Map& map, std::vector<vec2i> positions, bool show) : m(map), p(positions), s(show) { redo(); }
+	void redo() override { for (auto &t : p) setTile(m, t, s); }
+	void undo() override { for (auto &t : p) setTile(m, t, !s); }
 
 private:
 	Map& m;
-	Tile t;
-	Tile prev_t;
-};
-
-class RemoveTileCommand : public Command
-{
-public:
-	RemoveTileCommand(Map& map, vec2i pos) : m(map)
-	{
-		t = m.getTile(pos);
-		redo();
-	}
-
-	void redo() override
-	{
-		m.removeTile(t.pos);
-	}
-	void undo() override
-	{
-		m.insertTile(t);
-	}
-
-private:
-	Map& m;
-	Tile t;
+	std::vector<vec2i> p;
+	bool s;
 };
 
 class FillTileCommand : public Command
 {
 public:
-	FillTileCommand(Map& map, int tex_id, vec2i start_fill, vec2i end_fill) : m(map), t_id(tex_id), s_fill(start_fill), e_fill(end_fill)
+	FillTileCommand(Map& map, bool show, vec2i start_fill, vec2i end_fill) : s_fill(start_fill), e_fill(end_fill)
 	{
+		std::vector<vec2i> tiles;
 		vec2i t_start_fill, t_end_fill;
 
 		t_start_fill.x = std::min(s_fill.x, e_fill.x);
@@ -72,31 +39,26 @@ public:
 		{
 			for (int y = t_start_fill.y; y <= t_end_fill.y; ++y)
 			{
-				cmds.push_back(std::make_unique<InsertTileCommand>(m, Tile{ t_id, {x, y} }));
+				if (isTileShown(map, vec2i{x, y}) != show) tiles.push_back(vec2i{x, y});
 			}
 		}
+
+		cmd = std::make_unique<SetTileCommand>(map, tiles, show);
+		redo();
 	}
 
 	void redo() override
 	{
-		for (auto & c : cmds)
-		{
-			c->redo();
-		}
+		cmd->redo();
 	}
 	void undo() override
 	{
-		for (auto & c : cmds)
-		{
-			c->undo();
-		}
+		cmd->undo();
 	}
 
 private:
-	Map& m;
-	int t_id;
 	vec2i s_fill;
 	vec2i e_fill;
 
-	std::vector<std::unique_ptr<InsertTileCommand> > cmds;
+	std::unique_ptr<SetTileCommand> cmd;
 };

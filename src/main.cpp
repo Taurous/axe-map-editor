@@ -26,37 +26,49 @@
 #include <allegro5/allegro_ttf.h>
 #include <allegro5/allegro_image.h>
 #include <allegro5/allegro_primitives.h>
+#include <allegro5/allegro_native_dialog.h>
 
 #include "input.hpp"
-#include "state_machine.hpp"
-#include "editor_state.hpp"
+#include "util.hpp"
 
-constexpr int DEFAULT_WIND_WIDTH	= 1400;
-constexpr int DEFAULT_WIND_HEIGHT	= 900;
-std::string   DISPLAY_TITLE			= "Battle Maps";
+#include "viewer.hpp"
+#include "map_editor.hpp"
+
+#include "editor_events.hpp"
+
+constexpr int 	DEFAULT_WIND_WIDTH	= 1400;
+constexpr int 	DEFAULT_WIND_HEIGHT	= 900;
+constexpr char 	DISPLAY_TITLE[]		= "Axe DnD Map";
+
+using std_clk = std::chrono::steady_clock;
 
 int main(int argc, char ** argv)
 {
-	uint32_t version = al_get_allegro_version();
-	int major = version >> 24;
-	int minor = (version >> 16) & 255;
-	int revision = (version >> 8) & 255;
-	int release = version & 255;
-
-	printf("Allegro version %i.%i.%i[%i]\n", major, minor, revision, release);
-
-	ALLEGRO_DISPLAY		*main_display	= nullptr;
-	ALLEGRO_EVENT_QUEUE *ev_queue		= nullptr;
-	ALLEGRO_TIMER		*timer			= nullptr;
-
-#ifndef _DEBUG
-	std::ofstream log("errorlog.txt");
-	std::streambuf *oldbf;
-	if (log.is_open())
+	/*if (argc < 3)
 	{
-		oldbf = std::cerr.rdbuf(log.rdbuf());
-	}
-#endif
+		std::cout << "Usage: axe-map-editor <path-to-map-image> <tile-size>" << std::endl;
+		return -1;
+	}*/
+
+	Map in_map;
+	in_map.path = "/home/aksel/Downloads/map_32x32(2).png";//argv[1];
+	in_map.tile_size = 100;//atoi(argv[2]);
+
+	ALLEGRO_DISPLAY*		main_display	= nullptr;
+	ALLEGRO_EVENT_QUEUE*	ev_queue		= nullptr;
+	ALLEGRO_TIMER*			timer			= nullptr;
+	ALLEGRO_THREAD*			view_thread		= nullptr;
+	ALLEGRO_EVENT ev;
+	std_clk::time_point current_time;
+	double delta_time;
+	
+	bool redraw = true;
+	bool quit = false;
+
+	ThreadArgs thargs;
+	thargs.in_map = in_map;
+	thargs.mutex = al_create_mutex();
+	thargs.cond = al_create_cond();
 
 	if (!al_init())
 	{
@@ -64,22 +76,15 @@ int main(int argc, char ** argv)
 		exit(EXIT_FAILURE);
 	}
 
-	al_set_new_display_flags(ALLEGRO_WINDOWED | ALLEGRO_RESIZABLE);
-	al_set_new_window_title(DISPLAY_TITLE.c_str());
-	main_display = al_create_display(DEFAULT_WIND_WIDTH, DEFAULT_WIND_HEIGHT);
-
-	if (!main_display)
-	{
-		std::cerr << "Failed to create display!" << std::endl;
-		exit(EXIT_FAILURE);
-	}
+	main_display = createDisplay(std::string(DISPLAY_TITLE) + " - Editor", DEFAULT_WIND_WIDTH, DEFAULT_WIND_HEIGHT, ALLEGRO_WINDOWED | ALLEGRO_RESIZABLE);
 
 	al_init_image_addon();
 	al_init_font_addon();
 	al_init_ttf_addon();
 	al_init_primitives_addon();
+	al_init_native_dialog_addon();
 
-	timer = al_create_timer(1.f / 60.f);
+	timer = al_create_timer(1.0 / 60.0);
 	ev_queue = al_create_event_queue();
 
 	InputHandler m_input; // Installs keyboard and mouse
@@ -89,54 +94,88 @@ int main(int argc, char ** argv)
 	al_register_event_source(ev_queue, al_get_timer_event_source(timer));
 	al_register_event_source(ev_queue, al_get_display_event_source(main_display));
 
-	StateMachine m_sm;
-	m_sm.pushState(std::make_unique<EditorState>(m_sm, m_input));
+	// User Events
+
+	ALLEGRO_EVENT_SOURCE editor_event_source;
+	al_init_user_event_source(&editor_event_source);
+
+	thargs.event_source = &editor_event_source;
+	thargs.display_title = std::string(DISPLAY_TITLE) + " - Viewer";
+	thargs.display_size = { DEFAULT_WIND_WIDTH, DEFAULT_WIND_HEIGHT };
+
+	MapEditor map_editor(in_map, m_input, editor_event_source, {0, 0}, { getScreenSize().x, getScreenSize().y });
 
 	// Set program lifetime keybinds
-	m_input.setKeybind(ALLEGRO_KEY_ESCAPE, [&m_sm](){ m_sm.quit(); });
+	m_input.setKeybind(ALLEGRO_KEY_ESCAPE, 	[&quit](){ quit = true; });
+	m_input.setKeybind(ALLEGRO_KEY_F1,		[&](){
+		al_destroy_thread(view_thread);
 
-	bool redraw = true;
+		view_thread = nullptr;
+
+		// Pass pointer to map data into thread
+
+		view_thread = al_create_thread(thread_func, &thargs);
+		al_start_thread(view_thread);
+		map_editor.fireEvent(AXE_EDITOR_EVENT_COPY_DATA);	
+	});
+
+	m_input.callKeybind(ALLEGRO_KEY_F1);
+
 	al_start_timer(timer);
-	auto last_time = std::chrono::steady_clock::now();
-	while (m_sm.running())
+	auto last_time = std_clk::now();
+	while (!quit)
 	{
-		ALLEGRO_EVENT ev;
-		std::chrono::steady_clock::time_point current_time;
-		float delta_time;
-
 		al_wait_for_event(ev_queue, &ev);
 
-		if (ev.type == ALLEGRO_EVENT_DISPLAY_RESIZE) al_acknowledge_resize(ev.display.source);
+		// Skip any events where the focus is the view display
+		if (ev.any.source == al_get_mouse_event_source())
+		{
+			if (ev.mouse.display != main_display)
+			{
+				continue;
+			}
+		}
+		else if (ev.any.source == al_get_keyboard_event_source())
+		{
+			if (ev.keyboard.display != main_display)
+			{
+				continue;
+			}
+		}
 
 		m_input.getInput(ev);
-		m_sm.handleEvents(ev);
-		
+		map_editor.handleEvents(ev);
+	
 		switch (ev.type)
 		{
+			case ALLEGRO_EVENT_DISPLAY_RESIZE:
+				al_acknowledge_resize(ev.display.source);
+				map_editor.resizeView({0, 0}, { getScreenSize().x, getScreenSize().y });
+			break;
+
 			case ALLEGRO_EVENT_DISPLAY_CLOSE:
-				m_sm.quit();
+				quit = true;
 			break;
 
 			case ALLEGRO_EVENT_TIMER:
-				current_time = std::chrono::steady_clock::now();
-				delta_time = std::chrono::duration<float>(current_time - last_time).count();
+				current_time = std_clk::now();
+				delta_time = std::chrono::duration<double>(current_time - last_time).count();
 				last_time = current_time;
-				m_sm.update(delta_time);
-				m_sm.removeDeadStates();
-				redraw = !redraw;
+				map_editor.update(delta_time);
+				redraw = true;
 			break;
 
 			default:
 			break;
 		}
-
+		
 		//Drawing
 
 		if (al_event_queue_is_empty(ev_queue) && redraw)
 		{
 			al_clear_to_color(al_map_rgb(0, 0, 0));
 
-			m_sm.draw(false);
+			map_editor.draw();
 
 			al_flip_display();
 
@@ -144,17 +183,15 @@ int main(int argc, char ** argv)
 		}
 	}
 
+	if (view_thread) al_set_thread_should_stop(view_thread);
+
 	al_destroy_timer(timer);
 	al_destroy_event_queue(ev_queue);
 	al_destroy_display(main_display);
 
-#ifndef _DEBUG
-	if (log.is_open())
-	{
-		log.close();
-		std::cerr.rdbuf(oldbf);
-	}
-#endif
+	if (thargs.mutex) al_destroy_mutex(thargs.mutex);
+	if (thargs.cond) al_destroy_cond(thargs.cond);
+	al_destroy_thread(view_thread);
 
 	return 0;
 }

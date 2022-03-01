@@ -15,7 +15,9 @@ enum MOUSE
 	BUTTON4,
 	BUTTON5,
 	WHEELUP,
-	WHEELDOWN
+	WHEELDOWN,
+
+	ALLEGRO_MODIFIED_KEY_MAX
 };
 
 class InputHandler
@@ -45,21 +47,23 @@ public:
 
 	bool isModifierDown(const int mod);
 
-	vec2f getMousePos() const;
+	vec2i getMousePos() const;
 	bool isMouseInWindow() const;
 
-	void setKeybind(int key, std::function<void(void)> callback, bool pressed = true);
+	void setKeybind(int key, std::function<void(void)> callback, bool onPressed = true);
 	void clearKeybind(int key);
-	void callKeybind(int key, bool pressed);
+	void callKeybind(int key, bool pressed = true);
 	
 private:
 	int mods;
-	
-	ALLEGRO_KEYBOARD_STATE m_prev_key_state;
-	ALLEGRO_KEYBOARD_STATE m_cur_key_state;
 
-	ALLEGRO_MOUSE_STATE m_prev_mouse_state;
-	ALLEGRO_MOUSE_STATE m_cur_mouse_state;
+	bool mouse_wheel_up;
+	bool mouse_wheel_down;
+	vec2i mouse_position;
+
+	bool keys_pressed[ALLEGRO_MODIFIED_KEY_MAX];
+	bool keys_held[ALLEGRO_MODIFIED_KEY_MAX];
+	bool keys_released[ALLEGRO_MODIFIED_KEY_MAX];
 
 	std::map<int, std::function<void(void)> > keybinds_r;
 	std::map<int, std::function<void(void)> > keybinds_p;
