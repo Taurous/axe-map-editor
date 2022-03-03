@@ -16,7 +16,6 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-
 #include <iostream> // For std::cout and std::Cerr
 #include <chrono>	// To calculate delta time between ticks
 

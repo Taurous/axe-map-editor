@@ -232,17 +232,17 @@ void MapEditor::addTileToEditVector(vec2i position, bool show)
 
 void MapEditor::save()
 {
-	saveMap(map, "../mapdata/data.bin", view);
+	saveMap(map, "../map-save.mdf", view);
 }
 void MapEditor::load()
 {
-	if (loadMap(map, "../mapdata/data.bin", view, SAVE_VIEW))
+	if (loadMap(map, "../map-save.mdf", view, SAVE_VIEW))
 	{
 		undo_stack.clear();
 		redo_stack.clear();
 
 		fireEvent(AXE_EDITOR_EVENT_COPY_DATA);
-		// save viewer postion and set it here
+		//TODO save viewer postion and set it here
 	}
 }
 
