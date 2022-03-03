@@ -25,11 +25,7 @@ void MapEditor::resizeView(vec2i view_pos, vec2i view_size)
 MapEditor::MapEditor(const Map& in_map, InputHandler& input, ALLEGRO_EVENT_SOURCE& event_source, vec2i view_pos, vec2i view_size)
 	: m_input(input), m_event_source(event_source), dragging(false), filling(false), show_hidden(false), draw_grid(true)
 {
-	if (!createMap(map, in_map.path, in_map.tile_size))
-	{
-		std::cerr << "Failed to create map in MapEditor!" << std::endl;
-		exit(EXIT_FAILURE);
-	}
+	if (!createMap(map, in_map.path, in_map.tile_size)) exit(EXIT_FAILURE);
 
 	view.world_pos = { 0.0, 0.0 };
 	view.scale = { 1.0, 1.0 };

@@ -18,9 +18,7 @@ struct ThreadArgs
 	Map in_map;
     vec2i display_size;
     std::string display_title;
-
-	ALLEGRO_MUTEX *mutex;
-	ALLEGRO_COND *cond;
+	
 	ALLEGRO_EVENT_SOURCE *event_source;
 };
 

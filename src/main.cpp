@@ -1,5 +1,5 @@
 /*	LICENSE
-	DnD Battle Map
+	Axe DnD Map Viewer
     Copyright (C) 2021  Aksel Huff
 
     This program is free software: you can redistribute it and/or modify
@@ -17,44 +17,40 @@
 */
 
 
-#include <iostream> // For std::cerr
-#include <chrono>	// For FPS counting and providing game with tick time
-#include <fstream>
+#include <iostream> // For std::cout and std::Cerr
+#include <chrono>	// To calculate delta time between ticks
 
 #include <allegro5/allegro.h>
 #include <allegro5/allegro_font.h>
 #include <allegro5/allegro_ttf.h>
 #include <allegro5/allegro_image.h>
 #include <allegro5/allegro_primitives.h>
-#include <allegro5/allegro_native_dialog.h>
 
-#include "input.hpp"
 #include "util.hpp"
-
+#include "input.hpp"
 #include "viewer.hpp"
 #include "map_editor.hpp"
-
 #include "editor_events.hpp"
 
-constexpr int 	DEFAULT_WIND_WIDTH	= 1400;
-constexpr int 	DEFAULT_WIND_HEIGHT	= 900;
+constexpr int 	DEFAULT_WIND_WIDTH	= 1280;
+constexpr int 	DEFAULT_WIND_HEIGHT	= 768;
 constexpr char 	DISPLAY_TITLE[]		= "Axe DnD Map";
+
+constexpr int MIN_TILE_SIZE = 16;
+constexpr int MAX_TILE_SIZE = 128;
 
 using std_clk = std::chrono::steady_clock;
 
-int main(int argc, char ** argv)
+void printHelp();
+bool handleArgs(int argc, char** argv, std::string& path, int& tile_size);
+
+int main(int argc, char** argv)
 {
-	/*if (argc < 3)
-	{
-		std::cout << "Usage: axe-map-editor <path-to-map-image> <tile-size>" << std::endl;
-		return -1;
-	}*/
-
 	Map in_map;
-	in_map.path = "/home/aksel/Downloads/map_32x32(2).png";//argv[1];
-	in_map.tile_size = 100;//atoi(argv[2]);
 
-	ALLEGRO_DISPLAY*		main_display	= nullptr;
+	if (!handleArgs(argc, argv, in_map.path, in_map.tile_size)) return -1;
+
+	ALLEGRO_DISPLAY*		display			= nullptr;
 	ALLEGRO_EVENT_QUEUE*	ev_queue		= nullptr;
 	ALLEGRO_TIMER*			timer			= nullptr;
 	ALLEGRO_THREAD*			view_thread		= nullptr;
@@ -67,8 +63,6 @@ int main(int argc, char ** argv)
 
 	ThreadArgs thargs;
 	thargs.in_map = in_map;
-	thargs.mutex = al_create_mutex();
-	thargs.cond = al_create_cond();
 
 	if (!al_init())
 	{
@@ -76,13 +70,12 @@ int main(int argc, char ** argv)
 		exit(EXIT_FAILURE);
 	}
 
-	main_display = createDisplay(std::string(DISPLAY_TITLE) + " - Editor", DEFAULT_WIND_WIDTH, DEFAULT_WIND_HEIGHT, ALLEGRO_WINDOWED | ALLEGRO_RESIZABLE);
+	display = createDisplay(std::string(DISPLAY_TITLE) + " - Editor", DEFAULT_WIND_WIDTH, DEFAULT_WIND_HEIGHT, ALLEGRO_WINDOWED | ALLEGRO_RESIZABLE);
 
 	al_init_image_addon();
 	al_init_font_addon();
 	al_init_ttf_addon();
 	al_init_primitives_addon();
-	al_init_native_dialog_addon();
 
 	timer = al_create_timer(1.0 / 60.0);
 	ev_queue = al_create_event_queue();
@@ -92,7 +85,7 @@ int main(int argc, char ** argv)
 	al_register_event_source(ev_queue, al_get_keyboard_event_source());
 	al_register_event_source(ev_queue, al_get_mouse_event_source());
 	al_register_event_source(ev_queue, al_get_timer_event_source(timer));
-	al_register_event_source(ev_queue, al_get_display_event_source(main_display));
+	al_register_event_source(ev_queue, al_get_display_event_source(display));
 
 	// User Events
 
@@ -130,14 +123,14 @@ int main(int argc, char ** argv)
 		// Skip any events where the focus is the view display
 		if (ev.any.source == al_get_mouse_event_source())
 		{
-			if (ev.mouse.display != main_display)
+			if (ev.mouse.display != display)
 			{
 				continue;
 			}
 		}
 		else if (ev.any.source == al_get_keyboard_event_source())
 		{
-			if (ev.keyboard.display != main_display)
+			if (ev.keyboard.display != display)
 			{
 				continue;
 			}
@@ -187,11 +180,50 @@ int main(int argc, char ** argv)
 
 	al_destroy_timer(timer);
 	al_destroy_event_queue(ev_queue);
-	al_destroy_display(main_display);
+	al_destroy_display(display);
 
-	if (thargs.mutex) al_destroy_mutex(thargs.mutex);
-	if (thargs.cond) al_destroy_cond(thargs.cond);
 	al_destroy_thread(view_thread);
 
 	return 0;
+}
+
+void printHelp()
+{
+	std::cout << "Usage: axe-map-editor <path-to-image> <tile-size>\n"
+		<< "\tSupported image types are jpg, png, tga, bmp\n"
+		<< "\tTile-size must be between " << MIN_TILE_SIZE << " and " << MAX_TILE_SIZE
+		<< "\n\t-h to see this screen again" << std::endl;
+}
+
+bool handleArgs(int argc, char** argv, std::string& path, int& tile_size)
+{
+	if (argc < 2)
+	{
+		printHelp();
+		return false;
+	}
+    
+	if (std::string(argv[1]) == "-h" || std::string(argv[1]) == "-help")
+	{
+		printHelp();
+		return false;
+	}
+
+	if (argc < 3)
+	{
+		std::cerr << "Too few arguments!\n";
+		printHelp();
+		return false;
+	}
+
+	path = argv[1];
+	tile_size = atoi(argv[2]);
+
+	if (tile_size < MIN_TILE_SIZE || tile_size > MAX_TILE_SIZE) // TODO: Remove magic #, also document smallest allowed tile size
+	{
+		std::cerr << "Invalid tile size!\n";
+		return false;
+	}
+
+	return true;
 }
