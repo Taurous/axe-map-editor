@@ -22,10 +22,10 @@ void MapEditor::resizeView(vec2i view_pos, vec2i view_size)
 	view.screen_pos = view_pos;
 }
 
-MapEditor::MapEditor(const Map& in_map, InputHandler& input, ALLEGRO_EVENT_SOURCE& event_source, vec2i view_pos, vec2i view_size)
+MapEditor::MapEditor(InputHandler& input, ALLEGRO_EVENT_SOURCE& event_source, std::string image_path, int tile_size, vec2i view_pos, vec2i view_size)
 	: m_input(input), m_event_source(event_source), dragging(false), filling(false), show_hidden(false), draw_grid(true)
 {
-	if (!createMap(map, in_map.path, in_map.tile_size)) exit(EXIT_FAILURE);
+	if (!createMap(map, image_path, tile_size)) exit(EXIT_FAILURE);
 
 	view.world_pos = { 0.0, 0.0 };
 	view.scale = { 1.0, 1.0 };
@@ -62,39 +62,28 @@ MapEditor::~MapEditor()
 
 void MapEditor::handleEvents(const ALLEGRO_EVENT &ev)
 {
-	vec2i cur_tile_hovered;
-	vec2i mouse = m_input.getMousePos();
+	if (ev.type != ALLEGRO_EVENT_MOUSE_AXES) return; // Ignore every event except for mouse_axes
 
-	switch (ev.type)
+	vec2i cur_mouse_pos = m_input.getMousePos();
+	vec2i cur_tile_hovered = getTilePos(map, view, cur_mouse_pos);
+
+	if (!isMouseInView()) return;
+
+	if (dragging) view.world_pos = vec2d(last_pos) + (vec2d(dragging_start_pos - cur_mouse_pos) / view.scale);
+	
+	if (cur_tile_hovered == last_tile_hovered && !filling) return; // No need to proceed if the hovered tile hasn't changed, or if user is holding shift to fill
+
+	// If we get here, then mouse is dragging to continuously edit tiles
+	if (m_input.isMouseDown(MOUSE::LEFT))
 	{
-		case ALLEGRO_EVENT_MOUSE_AXES:
-			cur_tile_hovered = getTilePos(map, view, mouse);
+		if (!isTileShown(map, cur_tile_hovered)) addTileToEditVector(cur_tile_hovered, true);
+	}
+	else if (m_input.isMouseDown(MOUSE::RIGHT))
+	{
+		if (isTileShown(map, cur_tile_hovered)) addTileToEditVector(cur_tile_hovered, false);
+	}
 
-			if (isMouseInView()) // Test
-			{
-				if (m_input.isMouseDown(MOUSE::LEFT) && !filling)
-				{
-					if (cur_tile_hovered != last_tile_hovered)
-					{
-						if (!isTileShown(map, cur_tile_hovered)) addTileToEditVector(cur_tile_hovered, true);
-					}
-				}
-				else if (m_input.isMouseDown(MOUSE::RIGHT) && !filling)
-				{
-					if (cur_tile_hovered != last_tile_hovered)
-					{
-						if (isTileShown(map, cur_tile_hovered)) addTileToEditVector(cur_tile_hovered, false);
-					}
-				}
-
-				if (dragging) view.world_pos = vec2d(last_pos) + (vec2d(mouse_pos - m_input.getMousePos()) / view.scale);
-			}
-			last_tile_hovered = getTilePos(map, view, mouse);
-		break;
-
-		default:
-		break;
-	}	
+	last_tile_hovered = getTilePos(map, view, cur_mouse_pos);
 }
 
 void MapEditor::update(double delta_time)
@@ -172,7 +161,7 @@ void MapEditor::onMiddleMouseDown()
 	
 	if (isMouseInView())
 	{
-		mouse_pos = m_input.getMousePos();
+		dragging_start_pos = m_input.getMousePos();
 		last_pos = view.world_pos;
 		dragging = true;
 	}

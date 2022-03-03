@@ -1,8 +1,7 @@
 #pragma once
 
-#include <tuple>
-#include <type_traits>
-#include <sstream>
+#include <tuple> // For std::tie
+#include <sstream> // To overload << operator
 #include <cmath>
 
 template <typename T> class vec2;
@@ -38,13 +37,13 @@ public:
 	vec2& operator*=(const T& rhs) { x *= rhs; y *= rhs; return *this; }
 	vec2& operator/=(const T& rhs) { x /= rhs; y /= rhs; return *this; }
 
-	//Comparison ( <> Doesn't make a lot of sense)
+	//Comparison ( Commented < > out because it doesn't make a lot of sense)
 	friend bool operator==(const vec2& lhs, const vec2& rhs) { return std::tie(lhs.x, lhs.y) == std::tie(rhs.x, rhs.y); }
 	friend bool operator!=(const vec2& lhs, const vec2& rhs) { return !(lhs == rhs); }
-	friend bool operator< (const vec2& lhs, const vec2& rhs) { return std::tie(lhs.x, lhs.y) < std::tie(rhs.x, rhs.y); }
+	/*friend bool operator< (const vec2& lhs, const vec2& rhs) { return std::tie(lhs.x, lhs.y) < std::tie(rhs.x, rhs.y); }
 	friend bool operator>=(const vec2& lhs, const vec2& rhs) { return !(lhs < rhs); }
 	friend bool operator> (const vec2& lhs, const vec2& rhs) { return rhs < lhs; }
-	friend bool operator<=(const vec2& lhs, const vec2& rhs) { return !(rhs < lhs); }
+	friend bool operator<=(const vec2& lhs, const vec2& rhs) { return !(rhs < lhs); }*/
 
 	//Stream
 	friend std::ostream& operator<<(std::ostream& os, const vec2& v)
@@ -93,8 +92,5 @@ template <typename T> vec2<T> absolute(const vec2<T>& v) { return vec2<T>{ abs(v
 template <typename T> vec2<T> inverse(const vec2<T>& v1) { return vec2<T>{ 1.f / v1.x, 1.f / v1.y }; }
 template <typename T> vec2<T> vec_lerp(const vec2<T>& v1, const vec2<T>& v2, const double& t)
 {
-	vec2<T> ret_val;
-	ret_val.x = (v1.x * (1.0 - t)) + (v2.x * t);
-	ret_val.y = (v1.y * (1.0 - t)) + (v2.y * t);
-	return ret_val;
+	return { (v1.x * (1.0 - t)) + (v2.x * t), (v1.y * (1.0 - t)) + (v2.y * t) };
 }

@@ -9,6 +9,7 @@ set(CMAKE_CXX_FLAGS "-Wall -D_DEBUG")
 find_package(PkgConfig REQUIRED)
 
 add_executable(${PROJECT_NAME}
+    src/lerp.cpp
     src/util.cpp
     src/view.cpp
     src/input.cpp

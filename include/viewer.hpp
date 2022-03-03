@@ -7,22 +7,23 @@
 
 #include "vec.hpp"
 #include "util.hpp"
+#include "lerp.hpp"
 #include "view.hpp"
 #include "map.hpp"
 #include "editor_events.hpp"
 
 using std_clk = std::chrono::steady_clock;
 
-struct ThreadArgs
+struct ViewerArgs
 {
-	Map in_map;
+	int tile_size;
+	std::string image_path;
     vec2i display_size;
     std::string display_title;
-	
 	ALLEGRO_EVENT_SOURCE *event_source;
 };
 
-static void *thread_func(ALLEGRO_THREAD* thr, void* arg)
+static void *viewer_thread_func(ALLEGRO_THREAD* thr, void* arg)
 {
 	ALLEGRO_DISPLAY* display = nullptr;
 	ALLEGRO_EVENT_QUEUE* evq = nullptr;
@@ -33,9 +34,9 @@ static void *thread_func(ALLEGRO_THREAD* thr, void* arg)
 	bool running = true;
 	bool redraw = true;
 
-	ThreadArgs *thargs = (ThreadArgs*)arg;
+	ViewerArgs *args = (ViewerArgs*)arg;
 	View view;
-	view.size = thargs->display_size;
+	view.size = args->display_size;
 	view.screen_pos = { 0, 0 };
 	view.scale = { 1, 1 };
 	view.world_pos = { 0, 0 };
@@ -48,18 +49,17 @@ static void *thread_func(ALLEGRO_THREAD* thr, void* arg)
 	vec2d view_start;
 	vec2d view_target;
 
-	display = createDisplay(thargs->display_title.c_str(), thargs->display_size.x, thargs->display_size.y, ALLEGRO_RESIZABLE | ALLEGRO_WINDOWED);
+	display = createDisplay(args->display_title.c_str(), args->display_size.x, args->display_size.y, ALLEGRO_RESIZABLE | ALLEGRO_WINDOWED);
 	timer = al_create_timer(1.0 / 60.0);
 	evq = al_create_event_queue();
 
 	al_register_event_source(evq, al_get_timer_event_source(timer));
 	al_register_event_source(evq, al_get_display_event_source(display));
-	al_register_event_source(evq, thargs->event_source);
+	al_register_event_source(evq, args->event_source);
 
-	if (!createMap(map, thargs->in_map.path, thargs->in_map.tile_size))
+	if (!createMap(map, args->image_path, args->tile_size))
 	{
-		std::cerr << "Failed to load bitmap in thread" << std::endl;
-		std::cerr << "\tbmp_path = " << thargs->in_map.path << std::endl;
+		std::cerr << "Viewer failed to load bitmap!\n\tImage path: " << args->image_path << std::endl;
 		if (display) al_destroy_display(display);
 		if (timer) al_destroy_timer(timer);
 		if (evq) al_destroy_event_queue(evq);

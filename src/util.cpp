@@ -1,4 +1,5 @@
 #include "util.hpp"
+#include <iostream>
 
 vec2i getScreenSize()
 {

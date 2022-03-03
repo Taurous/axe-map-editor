@@ -14,7 +14,7 @@
 class MapEditor
 {
 public:
-	MapEditor(const Map& in_map, InputHandler& input, ALLEGRO_EVENT_SOURCE& event_source, vec2i view_pos, vec2i view_size);
+	MapEditor(InputHandler& input, ALLEGRO_EVENT_SOURCE& event_source, std::string image_path, int tile_size, vec2i view_pos, vec2i view_size);
 	~MapEditor();
 
 	void handleEvents(const ALLEGRO_EVENT &ev);
@@ -49,8 +49,8 @@ private: // TODO Reorganize
 	View view;
 	Map map;
 
-	vec2i last_pos;
-	vec2i mouse_pos; // Needs better name
+	vec2i last_pos; // Needs better name
+	vec2i dragging_start_pos;
 
 	vec2i last_tile_hovered;
 

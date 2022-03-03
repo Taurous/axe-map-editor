@@ -46,14 +46,14 @@ bool handleArgs(int argc, char** argv, std::string& path, int& tile_size);
 
 int main(int argc, char** argv)
 {
-	Map in_map;
-
-	if (!handleArgs(argc, argv, in_map.path, in_map.tile_size)) return -1;
+	// Get command line arguments
+	ViewerArgs viewer_args; // Passed to viewer thread function, and map_editor constructor
+	if (!handleArgs(argc, argv, viewer_args.image_path, viewer_args.tile_size)) return -1;
 
 	ALLEGRO_DISPLAY*		display			= nullptr;
 	ALLEGRO_EVENT_QUEUE*	ev_queue		= nullptr;
 	ALLEGRO_TIMER*			timer			= nullptr;
-	ALLEGRO_THREAD*			view_thread		= nullptr;
+	ALLEGRO_THREAD*			viewer_thread		= nullptr;
 	ALLEGRO_EVENT ev;
 	std_clk::time_point current_time;
 	double delta_time;
@@ -61,14 +61,13 @@ int main(int argc, char** argv)
 	bool redraw = true;
 	bool quit = false;
 
-	ThreadArgs thargs;
-	thargs.in_map = in_map;
-
 	if (!al_init())
 	{
 		std::cerr << "Failed to load Allegro!" << std::endl;
 		exit(EXIT_FAILURE);
 	}
+
+	InputHandler m_input; // Installs keyboard and mouse
 
 	display = createDisplay(std::string(DISPLAY_TITLE) + " - Editor", DEFAULT_WIND_WIDTH, DEFAULT_WIND_HEIGHT, ALLEGRO_WINDOWED | ALLEGRO_RESIZABLE);
 
@@ -80,8 +79,6 @@ int main(int argc, char** argv)
 	timer = al_create_timer(1.0 / 60.0);
 	ev_queue = al_create_event_queue();
 
-	InputHandler m_input; // Installs keyboard and mouse
-
 	al_register_event_source(ev_queue, al_get_keyboard_event_source());
 	al_register_event_source(ev_queue, al_get_mouse_event_source());
 	al_register_event_source(ev_queue, al_get_timer_event_source(timer));
@@ -92,27 +89,22 @@ int main(int argc, char** argv)
 	ALLEGRO_EVENT_SOURCE editor_event_source;
 	al_init_user_event_source(&editor_event_source);
 
-	thargs.event_source = &editor_event_source;
-	thargs.display_title = std::string(DISPLAY_TITLE) + " - Viewer";
-	thargs.display_size = { DEFAULT_WIND_WIDTH, DEFAULT_WIND_HEIGHT };
+	viewer_args.event_source = &editor_event_source;
+	viewer_args.display_title = std::string(DISPLAY_TITLE) + " - Viewer";
+	viewer_args.display_size = { DEFAULT_WIND_WIDTH, DEFAULT_WIND_HEIGHT };
 
-	MapEditor map_editor(in_map, m_input, editor_event_source, {0, 0}, { getScreenSize().x, getScreenSize().y });
+	MapEditor map_editor(m_input, editor_event_source, viewer_args.image_path, viewer_args.tile_size, {0, 0}, { getScreenSize().x, getScreenSize().y });
 
 	// Set program lifetime keybinds
 	m_input.setKeybind(ALLEGRO_KEY_ESCAPE, 	[&quit](){ quit = true; });
 	m_input.setKeybind(ALLEGRO_KEY_F1,		[&](){
-		al_destroy_thread(view_thread);
+		al_destroy_thread(viewer_thread); // Safely returns null if viewer_thread passed in is null
+		viewer_thread = nullptr;
 
-		view_thread = nullptr;
-
-		// Pass pointer to map data into thread
-
-		view_thread = al_create_thread(thread_func, &thargs);
-		al_start_thread(view_thread);
+		viewer_thread = al_create_thread(viewer_thread_func, &viewer_args);
+		al_start_thread(viewer_thread);
 		map_editor.fireEvent(AXE_EDITOR_EVENT_COPY_DATA);	
 	});
-
-	m_input.callKeybind(ALLEGRO_KEY_F1);
 
 	al_start_timer(timer);
 	auto last_time = std_clk::now();
@@ -123,17 +115,11 @@ int main(int argc, char** argv)
 		// Skip any events where the focus is the view display
 		if (ev.any.source == al_get_mouse_event_source())
 		{
-			if (ev.mouse.display != display)
-			{
-				continue;
-			}
+			if (ev.mouse.display != display) continue;
 		}
 		else if (ev.any.source == al_get_keyboard_event_source())
 		{
-			if (ev.keyboard.display != display)
-			{
-				continue;
-			}
+			if (ev.keyboard.display != display) continue;
 		}
 
 		m_input.getInput(ev);
@@ -176,13 +162,13 @@ int main(int argc, char** argv)
 		}
 	}
 
-	if (view_thread) al_set_thread_should_stop(view_thread);
+	if (viewer_thread) al_set_thread_should_stop(viewer_thread);
 
 	al_destroy_timer(timer);
 	al_destroy_event_queue(ev_queue);
 	al_destroy_display(display);
 
-	al_destroy_thread(view_thread);
+	al_destroy_thread(viewer_thread);
 
 	return 0;
 }

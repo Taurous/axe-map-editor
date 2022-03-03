@@ -11,7 +11,7 @@ vec2d worldToScreen(const vec2d& p, const View& v)
 	t += v.screen_pos;
 
 	return t;
-	//return (p - v.world_pos) * v.scale + (v.size / 2.f) + v.screen_pos;
+	//return (p - v.world_pos) * v.scale + (v.size / 2.0) + v.screen_pos; Why doesn't this work
 }
 vec2d screenToWorld(const vec2d& p, const View& v)
 {
@@ -23,7 +23,7 @@ vec2d screenToWorld(const vec2d& p, const View& v)
 	t += v.world_pos;
 
 	return t;
-	//return (p - (v.size / 2.f) - v.screen_pos) / v.scale + v.world_pos;
+	//return (p - (v.size / 2.0) - v.screen_pos) / v.scale + v.world_pos; Why doesn't this work
 }
 
 //Primitive Drawing
