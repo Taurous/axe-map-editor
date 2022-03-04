@@ -66,6 +66,8 @@ void InputHandler::getInput(const ALLEGRO_EVENT &ev)
 			callKeybind(ev.keyboard.keycode, true);
 			keys_pressed[ev.keyboard.keycode] = true;
 			keys_held[ev.keyboard.keycode] = true;
+			std::cout << "Shift Pressed: " << (ev.keyboard.modifiers & ALLEGRO_KEYMOD_SHIFT ? "true" : "false") <<  "\n"
+				<< "\tKeymods Bitfield " << std::hex << ev.keyboard.modifiers << "\n";
 		break;
 
 		case ALLEGRO_EVENT_KEY_UP:
@@ -73,6 +75,8 @@ void InputHandler::getInput(const ALLEGRO_EVENT &ev)
 			callKeybind(ev.keyboard.keycode, false);
 			keys_released[ev.keyboard.keycode] = true;
 			keys_held[ev.keyboard.keycode] = false;
+			std::cout << "Shift Pressed: " << (ev.keyboard.modifiers & ALLEGRO_KEYMOD_SHIFT ? "true" : "false") <<  "\n"
+				<< "\tKeymods Bitfield " << std::hex << ev.keyboard.modifiers << "\n";
 		break;
 
 		default:
