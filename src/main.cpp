@@ -52,7 +52,7 @@ int main(int argc, char** argv)
 	ALLEGRO_DISPLAY*		display			= nullptr;
 	ALLEGRO_EVENT_QUEUE*	ev_queue		= nullptr;
 	ALLEGRO_TIMER*			timer			= nullptr;
-	ALLEGRO_THREAD*			viewer_thread		= nullptr;
+	ALLEGRO_THREAD*			viewer_thread	= nullptr;
 	ALLEGRO_EVENT ev;
 	std_clk::time_point current_time;
 	double delta_time;
@@ -66,8 +66,6 @@ int main(int argc, char** argv)
 		exit(EXIT_FAILURE);
 	}
 
-	InputHandler m_input; // Installs keyboard and mouse
-
 	display = createDisplay(std::string(DISPLAY_TITLE) + " - Editor", DEFAULT_WIND_WIDTH, DEFAULT_WIND_HEIGHT, ALLEGRO_WINDOWED | ALLEGRO_RESIZABLE);
 
 	al_init_image_addon();
@@ -77,6 +75,8 @@ int main(int argc, char** argv)
 
 	timer = al_create_timer(1.0 / 60.0);
 	ev_queue = al_create_event_queue();
+
+	InputHandler m_input; // Installs keyboard and mouse
 
 	al_register_event_source(ev_queue, al_get_keyboard_event_source());
 	al_register_event_source(ev_queue, al_get_mouse_event_source());

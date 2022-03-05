@@ -111,11 +111,11 @@ static void *viewer_thread_func(ALLEGRO_THREAD* thr, void* arg)
 				current_time = std_clk::now();
 				delta_time = std::chrono::duration<double>(current_time - last_time).count();
 				last_time = current_time;
-				elapsed += delta_time;
 				redraw = true;
 
 				if (lerping && elapsed <= lerp_time)
 				{
+					elapsed += delta_time;
 					view.world_pos = vec_lerp(view_start, view_target, easeInAndOutQuart(elapsed / lerp_time));
 				}
 				else lerping = false;
