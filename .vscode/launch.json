@@ -9,7 +9,10 @@
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/build/axe-map-editor.exe",
-            "args": ["C:/Users/aksel/Pictures/image.png", "50"],
+            "args": [
+                "C:/Users/aksel/Pictures/image.png",
+                "50"
+            ],
             "stopAtEntry": false,
             "cwd": "${fileDirname}",
             "environment": [],
