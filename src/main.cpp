@@ -66,10 +66,10 @@ int main(int argc, char** argv)
 		exit(EXIT_FAILURE);
 	}
 
-	InputHandler m_input; // Installs keyboard and mouse
-
 	display = createDisplay(std::string(DISPLAY_TITLE) + " - Editor", DEFAULT_WIND_WIDTH, DEFAULT_WIND_HEIGHT, ALLEGRO_WINDOWED | ALLEGRO_RESIZABLE);
 
+	InputHandler m_input; // Installs keyboard and mouse
+	
 	al_init_image_addon();
 	al_init_font_addon();
 	al_init_ttf_addon();
