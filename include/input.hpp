@@ -17,7 +17,7 @@ enum MOUSE
 	WHEELUP,
 	WHEELDOWN,
 
-	ALLEGRO_MODIFIED_KEY_MAX
+	CUSTOM_ALLEGRO_KEY_MAX
 };
 
 class InputHandler
@@ -55,15 +55,15 @@ public:
 	void callKeybind(int key, bool pressed = true);
 	
 private:
-	int mods;
+	int modifiers;
 
 	bool mouse_wheel_up;
 	bool mouse_wheel_down;
 	vec2i mouse_position;
 
-	bool keys_pressed[ALLEGRO_MODIFIED_KEY_MAX];
-	bool keys_held[ALLEGRO_MODIFIED_KEY_MAX];
-	bool keys_released[ALLEGRO_MODIFIED_KEY_MAX];
+	bool keys_pressed[CUSTOM_ALLEGRO_KEY_MAX];
+	bool keys_held[CUSTOM_ALLEGRO_KEY_MAX];
+	bool keys_released[CUSTOM_ALLEGRO_KEY_MAX];
 
 	std::map<int, std::function<void(void)> > keybinds_r;
 	std::map<int, std::function<void(void)> > keybinds_p;

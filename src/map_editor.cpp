@@ -71,7 +71,7 @@ void MapEditor::handleEvents(const ALLEGRO_EVENT &ev)
 
 	if (dragging) view.world_pos = vec2d(last_pos) + (vec2d(dragging_start_pos - cur_mouse_pos) / view.scale);
 	
-	if (cur_tile_hovered == last_tile_hovered && !filling) return; // No need to proceed if the hovered tile hasn't changed, or if user is holding shift to fill
+	if (cur_tile_hovered == last_tile_hovered || filling) return; // No need to proceed if the hovered tile hasn't changed, or if user is holding shift to fill
 
 	// If we get here, then mouse is dragging to continuously edit tiles
 	if (m_input.isMouseDown(MOUSE::LEFT))

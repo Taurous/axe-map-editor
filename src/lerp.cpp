@@ -1,7 +1,5 @@
 #include "lerp.hpp"
 
-#pragma once
-
 double lerp(double t1, double t2, double t3)
 {
 	return (t1 * (1.0 - t3)) + (t2 * t3);

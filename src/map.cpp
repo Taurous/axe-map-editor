@@ -11,7 +11,7 @@
 #define cchar_cast(x) reinterpret_cast<const char*>(&x)
 #define char_cast(x) reinterpret_cast<char*>(&x)
 
-constexpr char MAGIC[] = {'M', 'D', 'F'};
+constexpr uint8_t MAGIC[] = {'M', 'D', 'F'};
 constexpr uint16_t version = 0x0100;
 
 void printFile(std::string path);
@@ -96,7 +96,7 @@ bool saveMap(Map& m, std::string file, const View& v)
 	if (out.is_open())
 	{
 		//Write Magic Bits to identify file
-		out.write(MAGIC, sizeof(char)*3);
+		out.write(cchar_cast(MAGIC), sizeof(char)*3);
 		//Write version of file
 		out.write(cchar_cast(version), sizeof(version));
 
@@ -118,6 +118,8 @@ bool saveMap(Map& m, std::string file, const View& v)
 
 		out.close();
 
+		std::cout << "Filed Saved!\n";
+
 		m.needs_save = false;
 		return true;
 	}
@@ -134,13 +136,20 @@ bool loadMap(Map& m, std::string file, View &v, bool restore_view)
 
 	if (in.is_open())
 	{
-		char buf[3];
+		uint8_t buf[3];
 		uint16_t r_version = 0;
 
-		in.read(buf, sizeof(char) * 3);
+		in.read(char_cast(buf), sizeof(char) * 3);
 		in.read(char_cast(r_version), sizeof(r_version));
 
-		if (std::string(buf) == std::string(MAGIC) && version == r_version)
+		bool correct_file = true;
+
+		for (int i = 0; i < 3; ++i)
+		{
+			if (buf[i] != MAGIC[i]) correct_file = false;
+		}
+
+		if (correct_file && version == r_version)
 		{
 			in.read(char_cast(temp_view.world_pos), sizeof(temp_view.world_pos));
 			in.read(char_cast(temp_view.scale), sizeof(temp_view.scale));
@@ -163,12 +172,14 @@ bool loadMap(Map& m, std::string file, View &v, bool restore_view)
 			m = temp_map;
 			v.scale = temp_view.scale;
 			v.world_pos = temp_view.world_pos;
+
+			std::cout << "Filed Loaded!\n";
+
+			m.needs_save = false;
+			return true;
 		}
 
 		in.close();
-
-		m.needs_save = false;
-		return true;
 	}
 
 	return false;

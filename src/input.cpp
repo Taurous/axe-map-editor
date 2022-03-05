@@ -2,7 +2,28 @@
 
 #include <iostream> // For std::cerr
 
-InputHandler::InputHandler() : mods(0)
+int getModifier(int keycode)
+{
+	switch (keycode)
+	{
+		case ALLEGRO_KEY_LSHIFT: // Fall through
+		case ALLEGRO_KEY_RSHIFT:
+			return ALLEGRO_KEYMOD_SHIFT;
+		break;
+		case ALLEGRO_KEY_LCTRL:
+		case ALLEGRO_KEY_RCTRL:
+			return ALLEGRO_KEYMOD_CTRL;
+		break;
+		case ALLEGRO_KEY_ALT:
+			return ALLEGRO_KEYMOD_ALT;
+		default:
+		break;
+	}
+
+	return 0;
+}
+
+InputHandler::InputHandler() : modifiers(0)
 {
 	if (!al_is_system_installed())
 	{
@@ -13,9 +34,9 @@ InputHandler::InputHandler() : mods(0)
 	al_install_keyboard();
 	al_install_mouse();
 
-	memset(keys_pressed, false, sizeof(bool) * ALLEGRO_MODIFIED_KEY_MAX);
-	memset(keys_held, false, sizeof(bool) * ALLEGRO_MODIFIED_KEY_MAX);
-	memset(keys_released, false, sizeof(bool) * ALLEGRO_MODIFIED_KEY_MAX);
+	memset(keys_pressed, false, sizeof(bool) * CUSTOM_ALLEGRO_KEY_MAX);
+	memset(keys_held, false, sizeof(bool) * CUSTOM_ALLEGRO_KEY_MAX);
+	memset(keys_released, false, sizeof(bool) * CUSTOM_ALLEGRO_KEY_MAX);
 }
 
 InputHandler::~InputHandler()
@@ -26,8 +47,8 @@ InputHandler::~InputHandler()
 
 void InputHandler::getInput(const ALLEGRO_EVENT &ev)
 {
-	memset(keys_pressed, false, sizeof(bool) * ALLEGRO_MODIFIED_KEY_MAX);
-	memset(keys_released, false, sizeof(bool) * ALLEGRO_MODIFIED_KEY_MAX);
+	memset(keys_pressed, false, sizeof(bool) * CUSTOM_ALLEGRO_KEY_MAX);
+	memset(keys_released, false, sizeof(bool) * CUSTOM_ALLEGRO_KEY_MAX);
 
 	mouse_wheel_down = false;
 	mouse_wheel_up = false;
@@ -62,14 +83,15 @@ void InputHandler::getInput(const ALLEGRO_EVENT &ev)
 		break;
 
 		case ALLEGRO_EVENT_KEY_DOWN:
-			mods = ev.keyboard.modifiers;
+			// Catch modifier keys
+			modifiers |= getModifier(ev.keyboard.keycode);
 			callKeybind(ev.keyboard.keycode, true);
 			keys_pressed[ev.keyboard.keycode] = true;
 			keys_held[ev.keyboard.keycode] = true;
 		break;
 
 		case ALLEGRO_EVENT_KEY_UP:
-			mods = ev.keyboard.modifiers;
+			modifiers &= ~getModifier(ev.keyboard.keycode);
 			callKeybind(ev.keyboard.keycode, false);
 			keys_released[ev.keyboard.keycode] = true;
 			keys_held[ev.keyboard.keycode] = false;
@@ -82,15 +104,15 @@ void InputHandler::getInput(const ALLEGRO_EVENT &ev)
 
 bool InputHandler::isKeyPressed(const int key, const int mod) const
 {
-	return keys_pressed[key] && (mod == -1 || mod & mods);
+	return keys_pressed[key] && (mod == -1 || mod & modifiers);
 }
 bool InputHandler::isKeyReleased(const int key, const int mod) const
 {
-	return keys_released[key] && (mod == -1 || mod & mods);
+	return keys_released[key] && (mod == -1 || mod & modifiers);
 }
 bool InputHandler::isKeyDown(const int key, const int mod) const
 {
-	return keys_held[key] && (mod == -1 || mod & mods);
+	return keys_held[key] && (mod == -1 || mod & modifiers);
 }
 
 bool InputHandler::isMousePressed(int button, const int mod) const
@@ -108,11 +130,11 @@ bool InputHandler::isMouseDown(int button, const int mod) const
 
 bool InputHandler::isMouseWheelDown(const int mod) const
 {
-	return mouse_wheel_down && (mod == -1 || mod & mods);
+	return mouse_wheel_down && (mod == -1 || mod & modifiers);
 }
 bool InputHandler::isMouseWheelUp(const int mod) const
 {
-	return mouse_wheel_up && (mod == -1 || mod & mods);
+	return mouse_wheel_up && (mod == -1 || mod & modifiers);
 }
 
 vec2i InputHandler::getMousePos(void) const
@@ -122,7 +144,7 @@ vec2i InputHandler::getMousePos(void) const
 
 bool InputHandler::isModifierDown(const int mod)
 {
-	return mod & mods;
+	return mod & modifiers;
 }
 
 void InputHandler::setKeybind(int key, std::function<void(void)> callback, bool pressed)
