@@ -2,7 +2,7 @@
 
 #include <tuple> // For std::tie
 #include <sstream> // To overload << operator
-#include <cmath>
+#include <cmath> // for floor
 
 template <typename T> class vec2;
 

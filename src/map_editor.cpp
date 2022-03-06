@@ -2,7 +2,6 @@
 #include <math.h>
 #include <functional>
 #include <allegro5/allegro_color.h>
-#include <allegro5/allegro_native_dialog.h>
 
 #include "map_editor.hpp"
 #include "util.hpp"

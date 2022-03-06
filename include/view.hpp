@@ -29,7 +29,7 @@ void drawScaledBitmap(const View& v, ALLEGRO_BITMAP* bmp, const vec2d& tl, const
 void drawTintedBitmapRegion(const View& v, ALLEGRO_BITMAP* bmp, const vec2d s_tl, const vec2d& s_dim, const vec2d& d_tl, const ALLEGRO_COLOR& cl, int flags);
 
 /*
-* Bitmap Drawing
+* Allegro Bitmap Drawing
 * 
 al_draw_tinted_bitmap
 al_draw_bitmap_region
