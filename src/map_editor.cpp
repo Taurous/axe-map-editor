@@ -231,11 +231,11 @@ void MapEditor::addTileToEditVector(vec2i position, bool show)
 
 void MapEditor::save()
 {
-	saveMap(map, "../map-save.mdf", view);
+	saveMap(map, "map-save.mdf", view);
 }
 void MapEditor::load()
 {
-	if (loadMap(map, "../map-save.mdf", view, SAVE_VIEW))
+	if (loadMap(map, "map-save.mdf", view, SAVE_VIEW))
 	{
 		undo_stack.clear();
 		redo_stack.clear();
