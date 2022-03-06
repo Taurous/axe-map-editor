@@ -2,27 +2,6 @@
 
 #include <iostream> // For std::cerr
 
-int getModifier(int keycode)
-{
-	switch (keycode)
-	{
-		case ALLEGRO_KEY_LSHIFT: // Fall through
-		case ALLEGRO_KEY_RSHIFT:
-			return ALLEGRO_KEYMOD_SHIFT;
-		break;
-		case ALLEGRO_KEY_LCTRL:
-		case ALLEGRO_KEY_RCTRL:
-			return ALLEGRO_KEYMOD_CTRL;
-		break;
-		case ALLEGRO_KEY_ALT:
-			return ALLEGRO_KEYMOD_ALT;
-		default:
-		break;
-	}
-
-	return 0;
-}
-
 InputHandler::InputHandler() : modifiers(0)
 {
 	if (!al_is_system_installed())
@@ -84,14 +63,14 @@ void InputHandler::getInput(const ALLEGRO_EVENT &ev)
 
 		case ALLEGRO_EVENT_KEY_DOWN:
 			// Catch modifier keys
-			modifiers |= getModifier(ev.keyboard.keycode);
+			modifiers = ev.keyboard.modifiers;
 			callKeybind(ev.keyboard.keycode, true);
 			keys_pressed[ev.keyboard.keycode] = true;
 			keys_held[ev.keyboard.keycode] = true;
 		break;
 
 		case ALLEGRO_EVENT_KEY_UP:
-			modifiers &= ~getModifier(ev.keyboard.keycode);
+			modifiers = ev.keyboard.modifiers;
 			callKeybind(ev.keyboard.keycode, false);
 			keys_released[ev.keyboard.keycode] = true;
 			keys_held[ev.keyboard.keycode] = false;
