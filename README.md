@@ -11,12 +11,22 @@ TODO
 ### Dependencies
 
 * [Allegro 5.2.7](https://github.com/liballeg/allegro5)
+* GCC Compiler
+* CMake
+* On Windows - MSYS2 + MinGW
 
 ### Installing
 
+#### APT
+``` sudo apt install liballegro5-dev```
+#### MSYS2
+```pacman -S mingw-w64-x86_64-allegro```
+
+Follow the instructions [here](https://www.msys2.org/) to install and set up MSYS2 on Windows.
+
 * Download the source, then cd into axe-map-editor.
 * If on windows you will need to edit the cmake file to point to where you have allegro installed. By default it looks in C:/libraries/allegro.
-* Create a build/ directory and cd into it. Run ```cmake ..``` to build the program.
+* Create a build/ directory and cd into it. Run `cmake ..` to build the program.
 
 ### Executing program
 
@@ -57,6 +67,9 @@ Taurous
 Contact info here
 
 ## Version History
+
+* 0.1.1-beta
+    * Map data was being saved to the directory above the executable. Changed to current working directory.
 
 * 0.1.0-beta
     * Initial Release
