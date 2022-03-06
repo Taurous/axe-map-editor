@@ -17,15 +17,21 @@ TODO
 
 ### Installing
 
-#### APT
-``` sudo apt install liballegro5-dev```
-#### MSYS2
-```pacman -S mingw-w64-x86_64-allegro```
+#### Windows
 
 Follow the instructions [here](https://www.msys2.org/) to install and set up MSYS2 on Windows.
 
+##### MSYS2
+```pacman -S mingw-w64-x86_64-allegro```
+
+TODO
+
+#### Linux
+
+##### APT
+``` sudo apt install liballegro5-dev```
+
 * Download the source, then cd into axe-map-editor.
-* If on windows you will need to edit the cmake file to point to where you have allegro installed. By default it looks in C:/libraries/allegro.
 * Create a build/ directory and cd into it. Run `cmake ..` to build the program.
 
 ### Executing program
