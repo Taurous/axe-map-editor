@@ -45,8 +45,6 @@ bool handleArgs(int argc, char** argv, std::string& path, int& tile_size);
 
 int main(int argc, char** argv)
 {
-	printAllegroVersion();
-
 	// Get command line arguments
 	ViewerArgs viewer_args; // Passed to viewer thread function, and map_editor constructor
 	if (!handleArgs(argc, argv, viewer_args.image_path, viewer_args.tile_size)) return -1;
