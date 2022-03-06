@@ -25,14 +25,14 @@ struct ViewerArgs
 
 static void *viewer_thread_func(ALLEGRO_THREAD* thr, void* arg)
 {
-	ALLEGRO_DISPLAY* display = nullptr;
-	ALLEGRO_EVENT_QUEUE* evq = nullptr;
-	ALLEGRO_TIMER* timer = nullptr;
-	ALLEGRO_EVENT ev;
-	std_clk::time_point current_time;
-	double delta_time;
-	bool running = true;
-	bool redraw = true;
+	ALLEGRO_DISPLAY* 		display 		= nullptr;
+	ALLEGRO_EVENT_QUEUE* 	evq 			= nullptr;
+	ALLEGRO_TIMER* 			timer 			= nullptr;
+	ALLEGRO_EVENT 			ev;
+	std_clk::time_point 	current_time;
+	double 					delta_time;
+	bool 					running 		= true;
+	bool 					redraw 			= true;
 
 	ViewerArgs *args = (ViewerArgs*)arg;
 	View view;

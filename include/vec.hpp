@@ -37,13 +37,9 @@ public:
 	vec2& operator*=(const T& rhs) { x *= rhs; y *= rhs; return *this; }
 	vec2& operator/=(const T& rhs) { x /= rhs; y /= rhs; return *this; }
 
-	//Comparison ( Commented < > out because it doesn't make a lot of sense)
+	//Comparison
 	friend bool operator==(const vec2& lhs, const vec2& rhs) { return std::tie(lhs.x, lhs.y) == std::tie(rhs.x, rhs.y); }
 	friend bool operator!=(const vec2& lhs, const vec2& rhs) { return !(lhs == rhs); }
-	/*friend bool operator< (const vec2& lhs, const vec2& rhs) { return std::tie(lhs.x, lhs.y) < std::tie(rhs.x, rhs.y); }
-	friend bool operator>=(const vec2& lhs, const vec2& rhs) { return !(lhs < rhs); }
-	friend bool operator> (const vec2& lhs, const vec2& rhs) { return rhs < lhs; }
-	friend bool operator<=(const vec2& lhs, const vec2& rhs) { return !(rhs < lhs); }*/
 
 	//Stream
 	friend std::ostream& operator<<(std::ostream& os, const vec2& v)
