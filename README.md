@@ -32,7 +32,7 @@ TODO
 ``` sudo apt install liballegro5-dev```
 
 * Download the source, then cd into axe-map-editor.
-* Create a build/ directory and cd into it. Run `cmake ..` to build the program.
+* Create a build/ directory and cd into it. Run `cmake ..` then `make all` to build the program.
 
 ### Executing program
 
