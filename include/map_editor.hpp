@@ -46,7 +46,7 @@ private: // TODO Reorganize
 	InputHandler &m_input;
 	ALLEGRO_EVENT_SOURCE &m_event_source;
 
-	View view;
+	View::ViewPort view;
 	Map map;
 
 	vec2i last_pos; // Needs better name

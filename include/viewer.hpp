@@ -35,10 +35,10 @@ static void *viewer_thread_func(ALLEGRO_THREAD* thr, void* arg)
 	bool 					redraw 			= true;
 
 	ViewerArgs *args = (ViewerArgs*)arg;
-	View view;
+	View::ViewPort view;
 	view.size = args->display_size;
 	view.screen_pos = { 0, 0 };
-	view.scale = { 1, 1 };
+	view.scale = 1.0;
 	view.world_pos = { 0, 0 };
 	Map map;
 	bool grid = true;
@@ -100,11 +100,11 @@ static void *viewer_thread_func(ALLEGRO_THREAD* thr, void* arg)
 			break;
 
 			case AXE_EDITOR_EVENT_ZOOM_IN:
-				if (view.scale.x < 5.0) view.scale += { 0.1, 0.1 };
+				if (view.scale < 5.0) view.scale += 0.1;
 			break;
 
 			case AXE_EDITOR_EVENT_ZOOM_OUT:
-				if (view.scale.x > 0.1) view.scale -= { 0.1, 0.1 };
+				if (view.scale >= 0.2) view.scale -= 0.1;
 			break;
 
 			case ALLEGRO_EVENT_TIMER:

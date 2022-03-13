@@ -71,8 +71,7 @@ template <typename T> vec2<T> operator/(const vec2<T>& lhs, const vec2<T>& rhs) 
 template <typename T> vec2<T> operator*(const T& lhs, const vec2<T>& rhs) { return vec2<T>(rhs) *= lhs; }
 template <typename T> vec2<T> operator*(const vec2<T>& lhs, const T& rhs) { return vec2<T>(lhs) *= rhs; }
 template <typename T> vec2<T> operator/(const vec2<T>& lhs, const T& rhs) { return vec2<T>(lhs) /= rhs; }
-//Commented out because dividing a scalar by a vector makes no sense?
-//template <typename T> vec2<T> operator/(const T* lhs, const vec2<T>& rhs) { return vec2<T>(lhs / rhs.x, lhs / rhs.y); }
+template <typename T> vec2<T> operator/(const T* lhs, const vec2<T>& rhs) { return vec2<T>(lhs / rhs.x, lhs / rhs.y); }
 
 //Helper Functions
 template <typename T> T dotProduct(const vec2<T>& v1, const vec2<T>& v2) { return v1.x * v2.x + v1.y * v2.y; }

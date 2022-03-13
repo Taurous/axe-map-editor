@@ -27,7 +27,7 @@ MapEditor::MapEditor(InputHandler& input, ALLEGRO_EVENT_SOURCE& event_source, st
 	if (!createMap(map, image_path, tile_size)) exit(EXIT_FAILURE);
 
 	view.world_pos = { 0.0, 0.0 };
-	view.scale = { 1.0, 1.0 };
+	view.scale = 1.0;
 
 	resizeView(view_pos, view_size);
 
@@ -47,7 +47,7 @@ MapEditor::MapEditor(InputHandler& input, ALLEGRO_EVENT_SOURCE& event_source, st
 	m_input.setKeybind(ALLEGRO_KEY_S, 		[this](){ if (m_input.isModifierDown(ALLEGRO_KEYMOD_CTRL)) save(); });
 	m_input.setKeybind(ALLEGRO_KEY_L, 		[this](){ if (m_input.isModifierDown(ALLEGRO_KEYMOD_CTRL)) load(); });
 	m_input.setKeybind(ALLEGRO_KEY_C,		[this](){ if (m_input.isModifierDown(ALLEGRO_KEYMOD_CTRL)) view.world_pos = { 0, 0 }; });
-	m_input.setKeybind(ALLEGRO_KEY_R,		[this](){ view.scale = {1, 1}; });
+	m_input.setKeybind(ALLEGRO_KEY_R,		[this](){ view.scale = 1.0; });
 	m_input.setKeybind(ALLEGRO_KEY_SPACE,	[this](){ show_hidden = !show_hidden; });
 	m_input.setKeybind(ALLEGRO_KEY_UP,		[this](){ fireEvent(AXE_EDITOR_EVENT_ZOOM_IN); });
 	m_input.setKeybind(ALLEGRO_KEY_DOWN,	[this](){ fireEvent(AXE_EDITOR_EVENT_ZOOM_OUT); });
@@ -273,25 +273,14 @@ void MapEditor::redo()
 
 void MapEditor::zoomToCursor(bool zoom_out)
 {
-	vec2d prev_pos = screenToWorld(m_input.getMousePos(), view);
-
-	if (zoom_out)
+	if (zoom_out && view.scale > MIN_ZOOM)
 	{
-		if (view.scale.x > MIN_ZOOM)
-		{
-			view.scale -= { ZOOM_FACTOR, ZOOM_FACTOR };
-		}
+		View::scaleRelativeToPoint(view, m_input.getMousePos(), -ZOOM_FACTOR);
 	}
-	else
+	else if (!zoom_out && view.scale < MAX_ZOOM)
 	{
-		if (view.scale.x < MAX_ZOOM)
-		{
-			view.scale += { ZOOM_FACTOR, ZOOM_FACTOR };
-		}
+		View::scaleRelativeToPoint(view, m_input.getMousePos(), ZOOM_FACTOR);
 	}
-
-	vec2d new_pos = screenToWorld(m_input.getMousePos(), view);
-	view.world_pos += prev_pos - new_pos;
 }
 
 bool MapEditor::isMouseInView()
