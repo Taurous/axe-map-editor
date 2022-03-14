@@ -11,12 +11,16 @@ TODO
 ### Dependencies
 
 * [Allegro 5.2.7](https://github.com/liballeg/allegro5)
+* [curlpp](https://github.com/jpbarrette/curlpp)
+* [nlohmann json](https://github.com/nlohmann/json)
+* C++17 Standard
+* cmake 3.16.3 or newer (Will lower this in the future when I understand cmake more)
 
 ### Installing
 
 * Download the source, then cd into axe-map-editor.
 * If on windows you will need to edit the cmake file to point to where you have allegro installed. By default it looks in C:/libraries/allegro.
-* Create a build/ directory and cd into it. Run ```cmake ..``` to build the program.
+* Create a build/ directory and cd into it. Run `cmake ..` to build the program.
 
 ### Executing program
 
