@@ -26,6 +26,7 @@ target_link_libraries(${PROJECT_NAME} allegro allegro_main allegro_primitives al
 else()
 
 add_executable(${PROJECT_NAME}
+    src/web.cpp
     src/lerp.cpp
     src/util.cpp
     src/view.cpp
@@ -38,12 +39,17 @@ add_executable(${PROJECT_NAME}
 find_package(PkgConfig REQUIRED)
 
 pkg_check_modules(ALLEGRO5 REQUIRED allegro-5 allegro_main-5 allegro_primitives-5 allegro_font-5 allegro_ttf-5 allegro_image-5 allegro_color-5)
+pkg_check_modules(CURLPP REQUIRED curlpp)
 
-target_link_libraries(${PROJECT_NAME} ${ALLEGRO5_LIBRARIES})
+target_link_libraries(${PROJECT_NAME}
+    ${ALLEGRO5_LIBRARIES}
+    ${CURLPP_LIBRARIES}
+)
 
 target_include_directories(${PROJECT_NAME} PRIVATE
     include
     ${ALLEGRO5_INCLUDE_DIRS}
+    ${CURLPP_INCLUDE_DIRS}
 )
 
 endif()

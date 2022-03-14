@@ -23,7 +23,7 @@ struct ViewerArgs
 	ALLEGRO_EVENT_SOURCE *event_source;
 };
 
-static void *viewer_thread_func(ALLEGRO_THREAD* thr, void* arg)
+void *viewer_thread_func(ALLEGRO_THREAD* thr, void* arg)
 {
 	ALLEGRO_DISPLAY* 		display 		= nullptr;
 	ALLEGRO_EVENT_QUEUE* 	evq 			= nullptr;

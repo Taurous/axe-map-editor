@@ -55,7 +55,9 @@
         "map": "cpp",
         "compare": "cpp",
         "concepts": "cpp",
-        "numbers": "cpp"
+        "numbers": "cpp",
+        "forward_list": "cpp",
+        "valarray": "cpp"
     },
     "cmake.sourceDirectory": "${workspaceFolder}/."
 }

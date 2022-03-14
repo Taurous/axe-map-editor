@@ -25,6 +25,8 @@
 #include <allegro5/allegro_image.h>
 #include <allegro5/allegro_primitives.h>
 
+#include "web.hpp"
+
 #include "util.hpp"
 #include "input.hpp"
 #include "viewer.hpp"
@@ -45,6 +47,10 @@ bool handleArgs(int argc, char** argv, std::string& path, int& tile_size);
 
 int main(int argc, char** argv)
 {
+	// Testing cURLpp
+
+	downloadMonsterData("https://www.dnd5eapi.co/api/monsters");
+
 	// Get command line arguments
 	ViewerArgs viewer_args; // Passed to viewer thread function, and map_editor constructor
 	if (!handleArgs(argc, argv, viewer_args.image_path, viewer_args.tile_size)) return -1;
@@ -176,8 +182,8 @@ void printHelp()
 {
 	std::cout << "Usage: axe-map-editor <path-to-image> <tile-size>\n"
 		<< "\tSupported image types are jpg, png, tga, bmp\n"
-		<< "\tTile-size must be between " << MIN_TILE_SIZE << " and " << MAX_TILE_SIZE
-		<< "\n\t-h to see this screen again" << std::endl;
+		<< "\t<tile-size> must be between " << MIN_TILE_SIZE << " and " << MAX_TILE_SIZE
+		<< "\n\n-h, --help\t\tshow help" << std::endl;
 }
 
 bool handleArgs(int argc, char** argv, std::string& path, int& tile_size)
@@ -188,7 +194,7 @@ bool handleArgs(int argc, char** argv, std::string& path, int& tile_size)
 		return false;
 	}
     
-	if (std::string(argv[1]) == "-h" || std::string(argv[1]) == "-help")
+	if (std::string(argv[1]) == "-h" || std::string(argv[1]) == "--help")
 	{
 		printHelp();
 		return false;
