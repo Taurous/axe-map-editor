@@ -10,8 +10,8 @@
             "request": "launch",
             "program": "${workspaceFolder}/build/axe-map-editor",
             "args": [
-                "/home/aksel/Pictures/mckley.jpg",
-                "96"
+                "-rl",
+                "/api/monsters"
             ],
             "stopAtEntry": false,
             "cwd": "${fileDirname}",

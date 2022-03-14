@@ -57,7 +57,9 @@
         "concepts": "cpp",
         "numbers": "cpp",
         "forward_list": "cpp",
-        "valarray": "cpp"
+        "valarray": "cpp",
+        "filesystem": "cpp",
+        "codecvt": "cpp"
     },
     "cmake.sourceDirectory": "${workspaceFolder}/."
 }
