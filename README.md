@@ -15,8 +15,24 @@ TODO
 * [nlohmann json](https://github.com/nlohmann/json)
 * C++17 Standard
 * cmake 3.16.3 or newer (Will lower this in the future when I understand cmake more)
+* GCC
+* On Windows - MSYS2 + MinGW
 
 ### Installing
+
+#### Windows
+
+Follow the instructions [here](https://www.msys2.org/) to install and set up MSYS2 on Windows.
+
+##### MSYS2
+```pacman -S mingw-w64-x86_64-allegro```
+
+TODO
+
+#### Linux
+
+##### APT
+``` sudo apt install liballegro5-dev```
 
 * Download the source, then cd into axe-map-editor.
 * If on windows you will need to edit the cmake file to point to where you have allegro installed. By default it looks in C:/libraries/allegro.
@@ -61,6 +77,9 @@ Taurous
 Contact info here
 
 ## Version History
+
+* 0.1.1-beta
+    * Map data was being saved to the directory above the executable. Changed to current working directory.
 
 * 0.1.0-beta
     * Initial Release
