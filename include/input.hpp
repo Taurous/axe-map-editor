@@ -34,6 +34,7 @@ public:
 	~InputHandler();
 
 	void getInput(const ALLEGRO_EVENT &ev);
+	void releaseKeys();
 
 	bool isKeyPressed(const int key, const int mod = -1) const;
 	bool isKeyReleased(const int key, const int mod = -1) const;

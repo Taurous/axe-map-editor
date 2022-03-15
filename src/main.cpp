@@ -25,6 +25,9 @@
 #include <allegro5/allegro_image.h>
 #include <allegro5/allegro_primitives.h>
 
+#include "imgui.h"
+#include "imgui_impl_allegro5.h"
+
 #include "web.hpp"
 
 #include "util.hpp"
@@ -39,6 +42,7 @@ constexpr char 	DISPLAY_TITLE[]		= "Axe DnD Map";
 
 constexpr int MIN_TILE_SIZE = 16;
 constexpr int MAX_TILE_SIZE = 128;
+static int SIDE_WIDTH = 300;
 
 using std_clk = std::chrono::steady_clock;
 
@@ -85,6 +89,15 @@ int main(int argc, char** argv)
 	al_register_event_source(ev_queue, al_get_timer_event_source(timer));
 	al_register_event_source(ev_queue, al_get_display_event_source(display));
 
+	// IMGUI
+
+	IMGUI_CHECKVERSION();
+	ImGui::CreateContext();
+	ImGuiIO& io = ImGui::GetIO();
+
+	ImGui::StyleColorsDark();
+	ImGui_ImplAllegro5_Init(display);
+
 	// User Events
 
 	ALLEGRO_EVENT_SOURCE editor_event_source;
@@ -94,7 +107,7 @@ int main(int argc, char** argv)
 	viewer_args.display_title = std::string(DISPLAY_TITLE) + " - Viewer";
 	viewer_args.display_size = { DEFAULT_WIND_WIDTH, DEFAULT_WIND_HEIGHT };
 
-	MapEditor map_editor(m_input, editor_event_source, viewer_args.image_path, viewer_args.tile_size, {0, 0}, { getScreenSize().x, getScreenSize().y });
+	MapEditor map_editor(m_input, editor_event_source, viewer_args.image_path, viewer_args.tile_size, {0, 0}, { getScreenSize().x-SIDE_WIDTH, getScreenSize().y });
 
 	// Set program lifetime keybinds
 	m_input.setKeybind(ALLEGRO_KEY_ESCAPE, 	[&quit](){ quit = true; });
@@ -123,14 +136,24 @@ int main(int argc, char** argv)
 			if (ev.keyboard.display != display) continue;
 		}
 
-		m_input.getInput(ev);
-		map_editor.handleEvents(ev);
-	
+		ImGui_ImplAllegro5_ProcessEvent(&ev);
+
+		if (io.WantCaptureKeyboard || io.WantCaptureMouse)
+		{
+			m_input.releaseKeys();
+		}
+		else
+		{
+			m_input.getInput(ev);
+			map_editor.handleEvents(ev);
+		}
+
 		switch (ev.type)
 		{
 			case ALLEGRO_EVENT_DISPLAY_RESIZE:
+				ImGui_ImplAllegro5_InvalidateDeviceObjects();
 				al_acknowledge_resize(ev.display.source);
-				map_editor.resizeView({0, 0}, { getScreenSize().x, getScreenSize().y });
+				ImGui_ImplAllegro5_CreateDeviceObjects();
 			break;
 
 			case ALLEGRO_EVENT_DISPLAY_CLOSE:
@@ -153,10 +176,28 @@ int main(int argc, char** argv)
 
 		if (al_event_queue_is_empty(ev_queue) && redraw)
 		{
+			ImGui_ImplAllegro5_NewFrame();
+			ImGui::NewFrame();
+
+			ImGui::SetNextWindowSize(ImVec2(SIDE_WIDTH, al_get_display_height(display)), ImGuiCond_Always);
+			ImGui::SetNextWindowPos(ImVec2(al_get_display_width(display)-SIDE_WIDTH, 0), ImGuiCond_Always);
+			if (!ImGui::Begin("Initiative Tracker", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove))
+			{
+				ImGui::End();
+
+				map_editor.resizeView({0, 0}, { al_get_display_width(display), al_get_display_height(display) });
+			}
+			else
+			{
+				ImGui::End();
+
+				map_editor.resizeView({0, 0}, { al_get_display_width(display) - SIDE_WIDTH, al_get_display_height(display) });
+			}
+
+			ImGui::Render();
 			al_clear_to_color(al_map_rgb(0, 0, 0));
-
 			map_editor.draw();
-
+			ImGui_ImplAllegro5_RenderDrawData(ImGui::GetDrawData());
 			al_flip_display();
 
 			redraw = false;
@@ -165,6 +206,11 @@ int main(int argc, char** argv)
 
 	if (viewer_thread) al_set_thread_should_stop(viewer_thread);
 
+	//Cleanup Imgui
+	ImGui_ImplAllegro5_Shutdown();
+	ImGui::DestroyContext();
+
+	//Cleanup Allegro5
 	al_destroy_timer(timer);
 	al_destroy_event_queue(ev_queue);
 	al_destroy_display(display);
