@@ -14,9 +14,6 @@ TODO
 * [curlpp](https://github.com/jpbarrette/curlpp)
 * [nlohmann json](https://github.com/nlohmann/json)
 * C++17 Standard
-* cmake 3.16.3 or newer (Will lower this in the future when I understand cmake more)
-* GCC
-* On Windows - MSYS2 + MinGW
 
 ### Installing
 
@@ -32,7 +29,7 @@ TODO
 #### Linux
 
 ##### APT
-``` sudo apt install liballegro5-dev```
+``` sudo apt install liballegro5-dev nlohmann-json3-dev libcurlpp-dev```
 
 * Download the source, then cd into axe-map-editor.
 * If on windows you will need to edit the cmake file to point to where you have allegro installed. By default it looks in C:/libraries/allegro.
