@@ -45,6 +45,7 @@ add_library(imgui
     ../imgui/imgui_draw.cpp
     ../imgui/imgui_widgets.cpp
     ../imgui/backends/imgui_impl_allegro5.cpp
+    ../imgui/imgui_demo.cpp
 )
 
 target_include_directories(imgui PUBLIC ${ALLEGRO5_LIBRARIES})

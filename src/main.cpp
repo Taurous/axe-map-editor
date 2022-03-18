@@ -42,7 +42,8 @@ constexpr char 	DISPLAY_TITLE[]		= "Axe DnD Map";
 
 constexpr int MIN_TILE_SIZE = 16;
 constexpr int MAX_TILE_SIZE = 128;
-static int SIDE_WIDTH = 300;
+constexpr int SIDE_WIDTH = 300;
+constexpr int BOTTOM_BAR_HEIGHT = 40;
 
 using std_clk = std::chrono::steady_clock;
 
@@ -51,6 +52,7 @@ bool handleArgs(int argc, char** argv, std::string& path, int& tile_size);
 
 int main(int argc, char** argv)
 {
+	printAllegroVersion();
 	// Get command line arguments
 	ViewerArgs viewer_args; // Passed to viewer thread function, and map_editor constructor
 	if (!handleArgs(argc, argv, viewer_args.image_path, viewer_args.tile_size)) return -1;
@@ -97,6 +99,7 @@ int main(int argc, char** argv)
 
 	ImGui::StyleColorsDark();
 	ImGui_ImplAllegro5_Init(display);
+	bool show_window = false;
 
 	// User Events
 
@@ -107,7 +110,7 @@ int main(int argc, char** argv)
 	viewer_args.display_title = std::string(DISPLAY_TITLE) + " - Viewer";
 	viewer_args.display_size = { DEFAULT_WIND_WIDTH, DEFAULT_WIND_HEIGHT };
 
-	MapEditor map_editor(m_input, editor_event_source, viewer_args.image_path, viewer_args.tile_size, {0, 0}, { getScreenSize().x-SIDE_WIDTH, getScreenSize().y });
+	MapEditor map_editor(m_input, editor_event_source, viewer_args.image_path, viewer_args.tile_size, {0, 0}, { getScreenSize().x, getScreenSize().y-BOTTOM_BAR_HEIGHT });
 
 	// Set program lifetime keybinds
 	m_input.setKeybind(ALLEGRO_KEY_ESCAPE, 	[&quit](){ quit = true; });
@@ -179,20 +182,24 @@ int main(int argc, char** argv)
 			ImGui_ImplAllegro5_NewFrame();
 			ImGui::NewFrame();
 
-			ImGui::SetNextWindowSize(ImVec2(SIDE_WIDTH, al_get_display_height(display)), ImGuiCond_Always);
+			if (show_window) ImGui::ShowDemoWindow(&show_window);
+
+			ImGui::SetNextWindowSize(ImVec2(SIDE_WIDTH, al_get_display_height(display) - BOTTOM_BAR_HEIGHT), ImGuiCond_Always);
 			ImGui::SetNextWindowPos(ImVec2(al_get_display_width(display)-SIDE_WIDTH, 0), ImGuiCond_Always);
 			if (!ImGui::Begin("Initiative Tracker", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove))
 			{
+				//Window is not visible
 				ImGui::End();
-
-				map_editor.resizeView({0, 0}, { al_get_display_width(display), al_get_display_height(display) });
 			}
 			else
 			{
 				ImGui::End();
-
-				map_editor.resizeView({0, 0}, { al_get_display_width(display) - SIDE_WIDTH, al_get_display_height(display) });
 			}
+
+			ImGui::SetNextWindowPos(ImVec2(0, al_get_display_height(display) + 16), ImGuiCond_Always, ImVec2(0, 1));
+			ImGui::Begin("Button Window", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoBackground);
+			if (ImGui::Button("Show Demo Window")) show_window = true;
+			ImGui::End();
 
 			ImGui::Render();
 			al_clear_to_color(al_map_rgb(0, 0, 0));
