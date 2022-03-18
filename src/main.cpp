@@ -52,7 +52,12 @@ bool handleArgs(int argc, char** argv, std::string& path, int& tile_size);
 
 int main(int argc, char** argv)
 {
-	printAllegroVersion();
+	if (((al_get_allegro_version() >> 8) & 255) < 7)
+	{
+		std::cerr << "Minimum Allegro5 version required is 5.2.7. You have " << getAllegroVersionStr() << " installed!\n";
+		return -1;
+	}
+
 	// Get command line arguments
 	ViewerArgs viewer_args; // Passed to viewer thread function, and map_editor constructor
 	if (!handleArgs(argc, argv, viewer_args.image_path, viewer_args.tile_size)) return -1;
@@ -157,6 +162,8 @@ int main(int argc, char** argv)
 				ImGui_ImplAllegro5_InvalidateDeviceObjects();
 				al_acknowledge_resize(ev.display.source);
 				ImGui_ImplAllegro5_CreateDeviceObjects();
+
+				map_editor.resizeView({0, 0}, { al_get_display_width(display), al_get_display_height(display) - BOTTOM_BAR_HEIGHT});
 			break;
 
 			case ALLEGRO_EVENT_DISPLAY_CLOSE:
@@ -196,7 +203,7 @@ int main(int argc, char** argv)
 				ImGui::End();
 			}
 
-			ImGui::SetNextWindowPos(ImVec2(0, al_get_display_height(display) + 16), ImGuiCond_Always, ImVec2(0, 1));
+			ImGui::SetNextWindowPos(ImVec2(0, al_get_display_height(display)), ImGuiCond_Always, ImVec2(0, 1));
 			ImGui::Begin("Button Window", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoBackground);
 			if (ImGui::Button("Show Demo Window")) show_window = true;
 			ImGui::End();
