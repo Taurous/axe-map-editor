@@ -58,7 +58,12 @@ int main(int argc, char** argv)
 
 	//End Testing dearimgui
 
-	printAllegroVersion();
+	if (((al_get_allegro_version() >> 8) & 255) < 7)
+	{
+		std::cerr << "Minimum Allegro5 version required is 5.2.7. You have " << getAllegroVersionStr() << " installed!\n";
+		return -1;
+	}
+
 	// Get command line arguments
 	ViewerArgs viewer_args; // Passed to viewer thread function, and map_editor constructor
 	if (!handleArgs(argc, argv, viewer_args.image_path, viewer_args.tile_size)) return -1;
@@ -164,7 +169,7 @@ int main(int argc, char** argv)
 				al_acknowledge_resize(ev.display.source);
 				ImGui_ImplAllegro5_CreateDeviceObjects();
 
-				map_editor.resizeView({0, 0}, {al_get_display_width(display), al_get_display_height(display) - BOTTOM_BAR_HEIGHT});
+				map_editor.resizeView({0, 0}, { al_get_display_width(display), al_get_display_height(display) - BOTTOM_BAR_HEIGHT});
 			break;
 
 			case ALLEGRO_EVENT_DISPLAY_CLOSE:

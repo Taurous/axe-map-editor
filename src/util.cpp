@@ -1,12 +1,13 @@
 #include "util.hpp"
 #include <iostream>
+#include <sstream>
 
 vec2i getScreenSize()
 {
 	return vec2i{al_get_display_width(al_get_current_display()), al_get_display_height(al_get_current_display())};
 }
 
-void printAllegroVersion()
+std::string getAllegroVersionStr()
 {
 	uint32_t version = al_get_allegro_version();
 	int major = version >> 24;
@@ -14,7 +15,10 @@ void printAllegroVersion()
 	int revision = (version >> 8) & 255;
 	int release = version & 255;
 
-	printf("Allegro version %i.%i.%i[%i]\n", major, minor, revision, release);
+	std::stringstream ss;
+
+	ss << major << '.' << minor << '.' << revision << '[' << release << ']';
+	return ss.str();
 }
 
 ALLEGRO_DISPLAY *createDisplay(std::string title, int width, int height, int flags)
