@@ -52,6 +52,12 @@ bool handleArgs(int argc, char** argv, std::string& path, int& tile_size);
 
 int main(int argc, char** argv)
 {
+	//Testing dearimgui
+
+	std::list<std::string> creatures = {"Carly", "Aksel", "Anthony", "Austin", "Chris", "Baelrog", "Stumpy", "Tarrasque", "Strahd", "Elephant", "Zombie", "Beholder"};
+
+	//End Testing dearimgui
+
 	printAllegroVersion();
 	// Get command line arguments
 	ViewerArgs viewer_args; // Passed to viewer thread function, and map_editor constructor
@@ -157,6 +163,8 @@ int main(int argc, char** argv)
 				ImGui_ImplAllegro5_InvalidateDeviceObjects();
 				al_acknowledge_resize(ev.display.source);
 				ImGui_ImplAllegro5_CreateDeviceObjects();
+
+				map_editor.resizeView({0, 0}, {al_get_display_width(display), al_get_display_height(display) - BOTTOM_BAR_HEIGHT});
 			break;
 
 			case ALLEGRO_EVENT_DISPLAY_CLOSE:
@@ -184,22 +192,52 @@ int main(int argc, char** argv)
 
 			if (show_window) ImGui::ShowDemoWindow(&show_window);
 
-			ImGui::SetNextWindowSize(ImVec2(SIDE_WIDTH, al_get_display_height(display) - BOTTOM_BAR_HEIGHT), ImGuiCond_Always);
-			ImGui::SetNextWindowPos(ImVec2(al_get_display_width(display)-SIDE_WIDTH, 0), ImGuiCond_Always);
-			if (!ImGui::Begin("Initiative Tracker", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove))
+			float main_menu_height = 0;
+			if (ImGui::BeginMainMenuBar())
 			{
-				//Window is not visible
-				ImGui::End();
-			}
-			else
-			{
-				ImGui::End();
+				if (ImGui::BeginMenu("File"))
+				{
+					if (ImGui::MenuItem("Show Demo Window")) show_window = true;
+					if (ImGui::MenuItem("Close")) quit = true;
+					ImGui::EndMenu();
+				}
+				main_menu_height = ImGui::GetWindowHeight();
+				ImGui::EndMainMenuBar();
 			}
 
-			ImGui::SetNextWindowPos(ImVec2(0, al_get_display_height(display) + 16), ImGuiCond_Always, ImVec2(0, 1));
-			ImGui::Begin("Button Window", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoBackground);
-			if (ImGui::Button("Show Demo Window")) show_window = true;
-			ImGui::End();
+			ImGui::SetNextWindowSize(ImVec2(SIDE_WIDTH, al_get_display_height(display) - BOTTOM_BAR_HEIGHT - main_menu_height), ImGuiCond_Always);
+			ImGui::SetNextWindowPos(ImVec2(al_get_display_width(display)-SIDE_WIDTH, main_menu_height), ImGuiCond_Always);
+			if (!ImGui::Begin("Initiative Tracker", nullptr,
+				ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse)) ImGui::End();
+			else
+			{
+				ImGui::BeginChildFrame(ImGui::GetID("Init"), ImVec2(0, -ImGui::GetFrameHeightWithSpacing()), ImGuiWindowFlags_NoBackground);
+					int id_count = 0;
+					for (auto &c : creatures)
+					{
+						std::string id = c + std::to_string(id_count++);
+						ImGui::BeginChild(ImGui::GetID(id.c_str()), ImVec2(0, 64), true);
+							ImGui::TextUnformatted(c.c_str());
+						ImGui::EndChild();
+					}
+				ImGui::EndChildFrame();
+
+				ImGui::Separator();
+
+				if (ImGui::Button("Next"))
+				{
+					std::string front = creatures.front();
+					creatures.pop_front();
+					creatures.push_back(front);
+				}
+				ImGui::SameLine();
+				if (ImGui::Button("Add Creature"))
+				{
+					creatures.push_back("Creature");
+				}
+
+				ImGui::End();
+			}
 
 			ImGui::Render();
 			al_clear_to_color(al_map_rgb(0, 0, 0));
