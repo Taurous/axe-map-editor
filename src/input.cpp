@@ -83,8 +83,8 @@ void InputHandler::getInput(const ALLEGRO_EVENT &ev)
 
 void InputHandler::releaseKeys()
 {
-	memset(keys_pressed, false, sizeof(bool) * CUSTOM_ALLEGRO_KEY_MAX);
-	memset(keys_held, false, sizeof(bool) * CUSTOM_ALLEGRO_KEY_MAX);
+	memset(keys_pressed,  false, sizeof(bool) * CUSTOM_ALLEGRO_KEY_MAX);
+	memset(keys_held, 	  false, sizeof(bool) * CUSTOM_ALLEGRO_KEY_MAX);
 	memset(keys_released, false, sizeof(bool) * CUSTOM_ALLEGRO_KEY_MAX);
 }
 

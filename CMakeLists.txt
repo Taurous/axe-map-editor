@@ -29,6 +29,7 @@ add_executable(${PROJECT_NAME}
     src/util.cpp
     src/view.cpp
     src/input.cpp
+    src/gui.cpp
     src/map.cpp
     src/map_editor.cpp
     src/main.cpp

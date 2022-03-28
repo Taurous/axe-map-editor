@@ -25,9 +25,7 @@
 #include <allegro5/allegro_image.h>
 #include <allegro5/allegro_primitives.h>
 
-#include "imgui.h"
-#include "imgui_impl_allegro5.h"
-
+#include "gui.hpp"
 #include "web.hpp"
 
 #include "util.hpp"
@@ -42,8 +40,6 @@ constexpr char 	DISPLAY_TITLE[]		= "Axe DnD Map";
 
 constexpr int MIN_TILE_SIZE = 16;
 constexpr int MAX_TILE_SIZE = 128;
-constexpr int SIDE_WIDTH = 300;
-constexpr int BOTTOM_BAR_HEIGHT = 40;
 
 using std_clk = std::chrono::steady_clock;
 
@@ -52,11 +48,12 @@ bool handleArgs(int argc, char** argv, std::string& path, int& tile_size);
 
 int main(int argc, char** argv)
 {
-	//Testing dearimgui
+	std::list<std::string> creatures;
 
-	std::list<std::string> creatures = {"Carly", "Aksel", "Anthony", "Austin", "Chris", "Baelrog", "Stumpy", "Tarrasque", "Strahd", "Elephant", "Zombie", "Beholder"};
-
-	//End Testing dearimgui
+	for (char c = 'A'; c <= 'Z'; ++c)
+	{
+		creatures.push_back(std::string(1, c));
+	}
 
 	if (((al_get_allegro_version() >> 8) & 255) < 7)
 	{
@@ -102,20 +99,16 @@ int main(int argc, char** argv)
 	al_register_event_source(ev_queue, al_get_timer_event_source(timer));
 	al_register_event_source(ev_queue, al_get_display_event_source(display));
 
-	// IMGUI
-
-	IMGUI_CHECKVERSION();
-	ImGui::CreateContext();
-	ImGuiIO& io = ImGui::GetIO();
-
-	ImGui::StyleColorsDark();
-	ImGui_ImplAllegro5_Init(display);
-	bool show_window = false;
+	ImGuiIO& io = initGui(display);
 
 	// User Events
 
 	ALLEGRO_EVENT_SOURCE editor_event_source;
 	al_init_user_event_source(&editor_event_source);
+
+	ALLEGRO_EVENT_SOURCE gui_event_source;
+	al_init_user_event_source(&gui_event_source);
+	al_register_event_source(ev_queue, &gui_event_source);
 
 	viewer_args.event_source = &editor_event_source;
 	viewer_args.display_title = std::string(DISPLAY_TITLE) + " - Viewer";
@@ -132,6 +125,18 @@ int main(int argc, char** argv)
 		viewer_thread = al_create_thread(viewer_thread_func, &viewer_args);
 		al_start_thread(viewer_thread);
 		map_editor.fireEvent(AXE_EDITOR_EVENT_COPY_DATA);	
+	});
+	m_input.setKeybind(ALLEGRO_KEY_UP, [&creatures]()
+	{
+		std::string front = creatures.front();
+        creatures.pop_front();
+        creatures.push_back(front);
+	});
+	m_input.setKeybind(ALLEGRO_KEY_DOWN, [&creatures]()
+	{
+		std::string back = creatures.back();
+        creatures.pop_back();
+        creatures.push_front(back);
 	});
 
 	al_start_timer(timer);
@@ -172,6 +177,7 @@ int main(int argc, char** argv)
 				map_editor.resizeView({0, 0}, { al_get_display_width(display), al_get_display_height(display) - BOTTOM_BAR_HEIGHT});
 			break;
 
+			case AXE_GUI_EVENT_QUIT: // Fall through
 			case ALLEGRO_EVENT_DISPLAY_CLOSE:
 				quit = true;
 			break;
@@ -192,62 +198,10 @@ int main(int argc, char** argv)
 
 		if (al_event_queue_is_empty(ev_queue) && redraw)
 		{
-			ImGui_ImplAllegro5_NewFrame();
-			ImGui::NewFrame();
-
-			if (show_window) ImGui::ShowDemoWindow(&show_window);
-
-			float main_menu_height = 0;
-			if (ImGui::BeginMainMenuBar())
-			{
-				if (ImGui::BeginMenu("File"))
-				{
-					if (ImGui::MenuItem("Show Demo Window")) show_window = true;
-					if (ImGui::MenuItem("Close")) quit = true;
-					ImGui::EndMenu();
-				}
-				main_menu_height = ImGui::GetWindowHeight();
-				ImGui::EndMainMenuBar();
-			}
-
-			ImGui::SetNextWindowSize(ImVec2(SIDE_WIDTH, al_get_display_height(display) - BOTTOM_BAR_HEIGHT - main_menu_height), ImGuiCond_Always);
-			ImGui::SetNextWindowPos(ImVec2(al_get_display_width(display)-SIDE_WIDTH, main_menu_height), ImGuiCond_Always);
-			if (!ImGui::Begin("Initiative Tracker", nullptr,
-				ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse)) ImGui::End();
-			else
-			{
-				ImGui::BeginChildFrame(ImGui::GetID("Init"), ImVec2(0, -ImGui::GetFrameHeightWithSpacing()), ImGuiWindowFlags_NoBackground);
-					int id_count = 0;
-					for (auto &c : creatures)
-					{
-						std::string id = c + std::to_string(id_count++);
-						ImGui::BeginChild(ImGui::GetID(id.c_str()), ImVec2(0, 64), true);
-							ImGui::TextUnformatted(c.c_str());
-						ImGui::EndChild();
-					}
-				ImGui::EndChildFrame();
-
-				ImGui::Separator();
-
-				if (ImGui::Button("Next"))
-				{
-					std::string front = creatures.front();
-					creatures.pop_front();
-					creatures.push_back(front);
-				}
-				ImGui::SameLine();
-				if (ImGui::Button("Add Creature"))
-				{
-					creatures.push_back("Creature");
-				}
-
-				ImGui::End();
-			}
-
-			ImGui::Render();
+			
 			al_clear_to_color(al_map_rgb(0, 0, 0));
 			map_editor.draw();
-			ImGui_ImplAllegro5_RenderDrawData(ImGui::GetDrawData());
+			renderGui(creatures, &gui_event_source);
 			al_flip_display();
 
 			redraw = false;
