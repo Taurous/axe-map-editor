@@ -4,6 +4,8 @@
 #include "imgui_impl_allegro5.h"
 #include "util.hpp"
 
+#include "initiative_tracker.hpp"
+
 #include <list>
 #include <string>
 
@@ -22,4 +24,4 @@ enum
 };
 
 ImGuiIO& initGui(ALLEGRO_DISPLAY* d);
-void renderGui(std::list<std::string>& creatures, ALLEGRO_EVENT_SOURCE *src);
+void renderGui(std::list<Creature>& creatures, ALLEGRO_EVENT_SOURCE *src);

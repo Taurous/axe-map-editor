@@ -1,21 +1,32 @@
 #include "gui.hpp"
+#include <iostream>
 
 static bool show_window = false;
+static ImFont *font_small = nullptr;
+static ImFont *font_big = nullptr;
 
 ImGuiIO& initGui(ALLEGRO_DISPLAY* d)
 {
     IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
 
+    ImGuiIO& io = ImGui::GetIO();
+
+    io.Fonts->ClearFonts();
+    font_small = io.Fonts->AddFontFromFileTTF("/usr/share/fonts/iosevka-fixed-medium.ttf", 24);
+    font_big = io.Fonts->AddFontFromFileTTF("/usr/share/fonts/iosevka-fixed-medium.ttf", 40);
+
 	ImGui::StyleColorsDark();
 	ImGui_ImplAllegro5_Init(d);
 
-    return ImGui::GetIO();
+    return io;
 }
 
-void renderGui(std::list<std::string>& creatures, ALLEGRO_EVENT_SOURCE *src)
+void renderGui(std::list<Creature>& creatures, ALLEGRO_EVENT_SOURCE *src)
 {
     vec2i res = getScreenSize();
+    float tracker_width = static_cast<float>(res.x) * 0.2;
+    tracker_width = tracker_width < 300 ? 300 : tracker_width;
     ALLEGRO_EVENT gui_event;
 
     ImGui_ImplAllegro5_NewFrame();
@@ -23,6 +34,7 @@ void renderGui(std::list<std::string>& creatures, ALLEGRO_EVENT_SOURCE *src)
 
     if (show_window) ImGui::ShowDemoWindow(&show_window);
 
+// Display Main Menu Bar
     float main_menu_height = 0;
     if (ImGui::BeginMainMenuBar())
     {
@@ -40,40 +52,10 @@ void renderGui(std::list<std::string>& creatures, ALLEGRO_EVENT_SOURCE *src)
         ImGui::EndMainMenuBar();
     }
 
-    ImGui::SetNextWindowSize(ImVec2(SIDE_WIDTH, res.y - BOTTOM_BAR_HEIGHT - main_menu_height), ImGuiCond_Always);
-    ImGui::SetNextWindowPos(ImVec2(res.x-SIDE_WIDTH, main_menu_height), ImGuiCond_Always);
-    if (!ImGui::Begin("Initiative Tracker", nullptr,
-        ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse)) ImGui::End();
-    else
-    {
-        ImGui::BeginChildFrame(ImGui::GetID("Init"), ImVec2(0, -ImGui::GetFrameHeightWithSpacing()), ImGuiWindowFlags_NoBackground);
-            int id_count = 0;
-            for (auto &c : creatures)
-            {
-                std::string id = c + std::to_string(id_count++);
-                ImGui::BeginChild(ImGui::GetID(id.c_str()), ImVec2(0, 64), true);
-                    ImGui::TextUnformatted(c.c_str());
-                ImGui::EndChild();
-            }
-        ImGui::EndChildFrame();
-
-        ImGui::Separator();
-
-        if (ImGui::Button("Next"))
-        {
-            std::string front = creatures.front();
-            creatures.pop_front();
-            creatures.push_back(front);
-        }
-        ImGui::SameLine();
-        if (ImGui::Button("Add Creature"))
-        {
-            creatures.push_back("Creature");
-        }
-
-        ImGui::End();
-    }
-
+    renderInitiativeTracker({static_cast<float>(res.x) - tracker_width, main_menu_height},
+        {tracker_width < 300.f ? 300.f : tracker_width,
+        static_cast<float>(res.y) - main_menu_height - BOTTOM_BAR_HEIGHT}, creatures);
+    
     ImGui::Render();
 
     ImGui_ImplAllegro5_RenderDrawData(ImGui::GetDrawData());

@@ -1,3 +1,5 @@
+#pragma once
+
 #include <string>
 
 void downloadResource(const std::string& resource);

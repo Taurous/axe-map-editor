@@ -48,12 +48,9 @@ bool handleArgs(int argc, char** argv, std::string& path, int& tile_size);
 
 int main(int argc, char** argv)
 {
-	std::list<std::string> creatures;
-
-	for (char c = 'A'; c <= 'Z'; ++c)
-	{
-		creatures.push_back(std::string(1, c));
-	}
+	std::list<Creature> creatures;
+	generateRandomCreatureList(creatures, 20);
+	sortCreaturesByInitiative(creatures);
 
 	if (((al_get_allegro_version() >> 8) & 255) < 7)
 	{
@@ -125,18 +122,6 @@ int main(int argc, char** argv)
 		viewer_thread = al_create_thread(viewer_thread_func, &viewer_args);
 		al_start_thread(viewer_thread);
 		map_editor.fireEvent(AXE_EDITOR_EVENT_COPY_DATA);	
-	});
-	m_input.setKeybind(ALLEGRO_KEY_UP, [&creatures]()
-	{
-		std::string front = creatures.front();
-        creatures.pop_front();
-        creatures.push_back(front);
-	});
-	m_input.setKeybind(ALLEGRO_KEY_DOWN, [&creatures]()
-	{
-		std::string back = creatures.back();
-        creatures.pop_back();
-        creatures.push_front(back);
 	});
 
 	al_start_timer(timer);
