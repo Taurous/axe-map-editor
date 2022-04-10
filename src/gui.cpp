@@ -6,8 +6,6 @@ Gui::Gui(ALLEGRO_DISPLAY *display) : m_display(display), m_show_demo_window(fals
     IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
 
-    ImGuiIO& io = ImGui::GetIO();
-
 	ImGui::StyleColorsDark();
 	ImGui_ImplAllegro5_Init(display);
 
