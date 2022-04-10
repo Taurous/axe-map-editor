@@ -17,11 +17,11 @@ struct Map
 };
 
 bool createMap(Map& m, std::string path_to_map, int tile_size);
-void clearMap(Map& m);
+void destroyMap(Map& m);
 bool reloadMap(Map& m);
 
 bool saveMap(Map& m, std::string file, const View::ViewPort& v);
-bool loadMap(Map& m, std::string file, View::ViewPort& v, bool restore_view);
+bool loadMap(Map& m, std::string file, View::ViewPort& v);
 
 void drawMap(const Map& m, const View::ViewPort& v, bool draw_grid, bool show_hidden);
 

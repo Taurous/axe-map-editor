@@ -1,6 +1,7 @@
 #include "util.hpp"
 #include <iostream>
 #include <sstream>
+#include <stdlib.h>
 
 vec2i getScreenSize()
 {
@@ -38,4 +39,12 @@ ALLEGRO_DISPLAY *createDisplay(std::string title, int width, int height, int fla
 	}
 
 	return d;
+}
+
+std::string getHomeDir()
+{
+    const char* env_var = nullptr;
+    env_var = secure_getenv("HOME");
+
+    return std::string(env_var);
 }

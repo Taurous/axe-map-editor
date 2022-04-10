@@ -19,7 +19,7 @@ add_executable(${PROJECT_NAME}
     src/main.cpp
 )
 target_include_directories(${PROJECT_NAME} PRIVATE C:/libraries/allegro/include include)
-target_link_libraries(${PROJECT_NAME} allegro allegro_main allegro_primitives allegro_font allegro_ttf allegro_image allegro_color)
+target_link_libraries(${PROJECT_NAME} allegro allegro_main allegro_primitives allegro_font allegro_ttf allegro_image allegro_color allegro_dialog)
 
 else()
 
@@ -37,7 +37,7 @@ add_executable(${PROJECT_NAME}
 
 find_package(PkgConfig REQUIRED)
 
-pkg_check_modules(ALLEGRO5 REQUIRED allegro-5 allegro_main-5 allegro_primitives-5 allegro_font-5 allegro_ttf-5 allegro_image-5 allegro_color-5)
+pkg_check_modules(ALLEGRO5 REQUIRED allegro-5 allegro_main-5 allegro_primitives-5 allegro_font-5 allegro_ttf-5 allegro_image-5 allegro_color-5 allegro_dialog-5)
 pkg_check_modules(CURLPP REQUIRED curlpp)
 
 add_library(imgui

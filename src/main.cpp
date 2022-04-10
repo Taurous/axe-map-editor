@@ -1,6 +1,6 @@
 /*	LICENSE
 	Axe DnD Map Viewer
-    Copyright (C) 2021  Aksel Huff
+    Copyright (C) 2022  Aksel Huff
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -24,10 +24,9 @@
 #include <allegro5/allegro_ttf.h>
 #include <allegro5/allegro_image.h>
 #include <allegro5/allegro_primitives.h>
+#include <allegro5/allegro_native_dialog.h>
 
 #include "gui.hpp"
-#include "web.hpp"
-
 #include "util.hpp"
 #include "input.hpp"
 #include "viewer.hpp"
@@ -38,49 +37,36 @@ constexpr int 	DEFAULT_WIND_WIDTH	= 1280;
 constexpr int 	DEFAULT_WIND_HEIGHT	= 768;
 constexpr char 	DISPLAY_TITLE[]		= "Axe DnD Map";
 
-constexpr int MIN_TILE_SIZE = 16;
-constexpr int MAX_TILE_SIZE = 128;
-
 using std_clk = std::chrono::steady_clock;
 
-void printHelp();
-bool handleArgs(int argc, char** argv, std::string& path, int& tile_size);
-
-int main(int argc, char** argv)
+int main()
 {
-	std::list<std::string> creatures;
-
-	for (char c = 'A'; c <= 'Z'; ++c)
+	if (!al_init())
 	{
-		creatures.push_back(std::string(1, c));
+		std::cerr << "Failed to load Allegro!" << std::endl;
+		exit(EXIT_FAILURE);
 	}
 
+	// Check Allegro Version
+	// Allegro 5.2.7 introduced keyboard modifiers being updated on
+	// AL_KEY_DOWN/UP events which this app depends on.
 	if (((al_get_allegro_version() >> 8) & 255) < 7)
 	{
 		std::cerr << "Minimum Allegro5 version required is 5.2.7. You have " << getAllegroVersionStr() << " installed!\n";
 		return -1;
 	}
 
-	// Get command line arguments
-	ViewerArgs viewer_args; // Passed to viewer thread function, and map_editor constructor
-	if (!handleArgs(argc, argv, viewer_args.image_path, viewer_args.tile_size)) return -1;
-
 	ALLEGRO_DISPLAY*		display			= nullptr;
 	ALLEGRO_EVENT_QUEUE*	ev_queue		= nullptr;
 	ALLEGRO_TIMER*			timer			= nullptr;
 	ALLEGRO_THREAD*			viewer_thread	= nullptr;
 	ALLEGRO_EVENT ev;
+
 	std_clk::time_point current_time;
 	double delta_time;
-	
+
 	bool redraw = true;
 	bool quit = false;
-
-	if (!al_init())
-	{
-		std::cerr << "Failed to load Allegro!" << std::endl;
-		exit(EXIT_FAILURE);
-	}
 
 	display = createDisplay(std::string(DISPLAY_TITLE) + " - Editor", DEFAULT_WIND_WIDTH, DEFAULT_WIND_HEIGHT, ALLEGRO_WINDOWED | ALLEGRO_RESIZABLE);
 	
@@ -88,33 +74,27 @@ int main(int argc, char** argv)
 	al_init_font_addon();
 	al_init_ttf_addon();
 	al_init_primitives_addon();
+	al_init_native_dialog_addon();
 
 	timer = al_create_timer(1.0 / 60.0);
 	ev_queue = al_create_event_queue();
 
+	// Systems
 	InputHandler m_input; // Installs keyboard and mouse
+	Gui gui(display);
+	MapEditor map_editor(m_input, {0, 0}, { getScreenSize().x, getScreenSize().y - BOTTOM_BAR_HEIGHT });
 
 	al_register_event_source(ev_queue, al_get_keyboard_event_source());
 	al_register_event_source(ev_queue, al_get_mouse_event_source());
 	al_register_event_source(ev_queue, al_get_timer_event_source(timer));
 	al_register_event_source(ev_queue, al_get_display_event_source(display));
+	al_register_event_source(ev_queue, gui.getEventSource());
+	al_register_event_source(ev_queue, map_editor.getEventSource());
 
-	ImGuiIO& io = initGui(display);
-
-	// User Events
-
-	ALLEGRO_EVENT_SOURCE editor_event_source;
-	al_init_user_event_source(&editor_event_source);
-
-	ALLEGRO_EVENT_SOURCE gui_event_source;
-	al_init_user_event_source(&gui_event_source);
-	al_register_event_source(ev_queue, &gui_event_source);
-
-	viewer_args.event_source = &editor_event_source;
+	ViewerArgs viewer_args;
+	viewer_args.event_source = map_editor.getEventSource();
 	viewer_args.display_title = std::string(DISPLAY_TITLE) + " - Viewer";
 	viewer_args.display_size = { DEFAULT_WIND_WIDTH, DEFAULT_WIND_HEIGHT };
-
-	MapEditor map_editor(m_input, editor_event_source, viewer_args.image_path, viewer_args.tile_size, {0, 0}, { getScreenSize().x, getScreenSize().y-BOTTOM_BAR_HEIGHT });
 
 	// Set program lifetime keybinds
 	m_input.setKeybind(ALLEGRO_KEY_ESCAPE, 	[&quit](){ quit = true; });
@@ -125,18 +105,6 @@ int main(int argc, char** argv)
 		viewer_thread = al_create_thread(viewer_thread_func, &viewer_args);
 		al_start_thread(viewer_thread);
 		map_editor.fireEvent(AXE_EDITOR_EVENT_COPY_DATA);	
-	});
-	m_input.setKeybind(ALLEGRO_KEY_UP, [&creatures]()
-	{
-		std::string front = creatures.front();
-        creatures.pop_front();
-        creatures.push_back(front);
-	});
-	m_input.setKeybind(ALLEGRO_KEY_DOWN, [&creatures]()
-	{
-		std::string back = creatures.back();
-        creatures.pop_back();
-        creatures.push_front(back);
 	});
 
 	al_start_timer(timer);
@@ -155,9 +123,10 @@ int main(int argc, char** argv)
 			if (ev.keyboard.display != display) continue;
 		}
 
+		// Stop handling input if file dialog is open
 		ImGui_ImplAllegro5_ProcessEvent(&ev);
 
-		if (io.WantCaptureKeyboard || io.WantCaptureMouse)
+		if (gui.captureInput())
 		{
 			m_input.releaseKeys();
 		}
@@ -182,6 +151,38 @@ int main(int argc, char** argv)
 				quit = true;
 			break;
 
+			/*case AXE_GUI_EVENT_FILE_DIALOG_CREATE:
+				if (!file_dialog_open)
+				{
+					file_dialog = spawn_file_dialog(display, &gui_event_source, getHomeDir() + "/Pictures/", static_cast<DIALOG_TYPE>(ev.user.data1));
+				}
+				file_dialog_open = true;
+			break;
+
+			case AXE_GUI_EVENT_FILE_DIALOG_FINISHED:
+				if (file_dialog_open)
+				{
+					if (al_get_native_file_dialog_count(file_dialog->file_dialog) > 0)
+					{
+						std::string path = al_get_native_file_dialog_path(file_dialog->file_dialog, 0);
+						switch (file_dialog->type)
+						{
+							case DIALOG_TYPE::NEW:
+								map_editor.create(path, 32); // TODO: Get tile size. (Open modal, then in modal spawn the file dialog to enter path into text box)
+							break;
+							case DIALOG_TYPE::LOAD:
+								//map_editor.load(path); // Will not work until properly implement saving.
+							break;
+							default:
+							break;
+						}
+					}
+
+					stop_file_dialog(file_dialog);
+					file_dialog_open = false;
+				}
+			break;*/
+
 			case ALLEGRO_EVENT_TIMER:
 				current_time = std_clk::now();
 				delta_time = std::chrono::duration<double>(current_time - last_time).count();
@@ -201,7 +202,7 @@ int main(int argc, char** argv)
 			
 			al_clear_to_color(al_map_rgb(0, 0, 0));
 			map_editor.draw();
-			renderGui(creatures, &gui_event_source);
+			gui.render();
 			al_flip_display();
 
 			redraw = false;
@@ -209,10 +210,6 @@ int main(int argc, char** argv)
 	}
 
 	if (viewer_thread) al_set_thread_should_stop(viewer_thread);
-
-	//Cleanup Imgui
-	ImGui_ImplAllegro5_Shutdown();
-	ImGui::DestroyContext();
 
 	//Cleanup Allegro5
 	al_destroy_timer(timer);
@@ -222,45 +219,4 @@ int main(int argc, char** argv)
 	al_destroy_thread(viewer_thread);
 
 	return 0;
-}
-
-void printHelp()
-{
-	std::cout << "Usage: axe-map-editor <path-to-image> <tile-size>\n"
-		<< "\tSupported image types are jpg, png, tga, bmp\n"
-		<< "\t<tile-size> must be between " << MIN_TILE_SIZE << " and " << MAX_TILE_SIZE
-		<< "\n\n-h, --help\t\tshow help" << std::endl;
-}
-
-bool handleArgs(int argc, char** argv, std::string& path, int& tile_size)
-{
-	if (argc < 2)
-	{
-		printHelp();
-		return false;
-	}
-    
-	if (std::string(argv[1]) == "-h" || std::string(argv[1]) == "--help")
-	{
-		printHelp();
-		return false;
-	}
-
-	if (argc < 3)
-	{
-		std::cerr << "Too few arguments!\n";
-		printHelp();
-		return false;
-	}
-
-	path = argv[1];
-	tile_size = atoi(argv[2]);
-
-	if (tile_size < MIN_TILE_SIZE || tile_size > MAX_TILE_SIZE) // TODO: Remove magic #, also document smallest allowed tile size
-	{
-		std::cerr << "Invalid tile size!\n";
-		return false;
-	}
-
-	return true;
 }

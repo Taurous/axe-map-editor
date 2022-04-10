@@ -53,6 +53,7 @@ public:
 
 	void setKeybind(int key, std::function<void(void)> callback, bool onPressed = true);
 	void clearKeybind(int key);
+	void clearKeybinds();
 	void callKeybind(int key, bool pressed = true);
 	
 private:

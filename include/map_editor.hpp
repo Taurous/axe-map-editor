@@ -14,15 +14,16 @@
 class MapEditor
 {
 public:
-	MapEditor(InputHandler& input, ALLEGRO_EVENT_SOURCE& event_source, std::string image_path, int tile_size, vec2i view_pos, vec2i view_size);
+	MapEditor(InputHandler& input, vec2i view_pos, vec2i view_size);
 	~MapEditor();
 
 	void handleEvents(const ALLEGRO_EVENT &ev);
 	void update(double delta_time);
 	void draw();
 
-	void save();
-	void load();
+	bool create(std::string image_path, int tile_size);
+	bool save();
+	bool load(std::string path);
 	void undo();
 	void redo();
 	
@@ -41,10 +42,13 @@ public:
 	void resizeView(vec2i view_pos, vec2i view_size);
 
 	void fireEvent(int event_id);
+	ALLEGRO_EVENT_SOURCE *getEventSource();
 
 private: // TODO Reorganize
 	InputHandler &m_input;
-	ALLEGRO_EVENT_SOURCE &m_event_source;
+	ALLEGRO_EVENT_SOURCE m_event_source;
+
+	bool image_loaded;
 
 	View::ViewPort view;
 	Map map;
@@ -65,4 +69,7 @@ private: // TODO Reorganize
 
 	void pushCommand(std::unique_ptr<Command> c);
 	std::vector<vec2i> tiles_to_edit;
+
+	void enableKeybinds();
+	void disableKeybinds();
 };

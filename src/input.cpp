@@ -139,19 +139,20 @@ void InputHandler::setKeybind(int key, std::function<void(void)> callback, bool 
 	else keybinds_r[key] = callback;
 }
 
+// TODO: Need to make keybinds easier to clear, attach some sort of meta data about who created the keybind?
 void InputHandler::clearKeybind(int key)
 {
-	//TODO Untested
 	auto it = keybinds_p.find(key);
-	if (it != keybinds_p.end())
-	{
-		keybinds_p.erase(it);
-		return;
-	}
+	if (it != keybinds_p.end()) keybinds_p.erase(it);
 
 	it = keybinds_r.find(key);
-
 	if (it != keybinds_r.end()) keybinds_r.erase(it);
+}
+
+void InputHandler::clearKeybinds()
+{
+	keybinds_p.clear();
+	keybinds_r.clear();
 }
 
 void InputHandler::callKeybind(int key, bool pressed)

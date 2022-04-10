@@ -48,7 +48,7 @@ bool createMap(Map& m, std::string path, int ts)
 	return true;
 }
 
-void clearMap(Map& m)
+void destroyMap(Map& m)
 {
 	if (m.bmp)
 	{
@@ -125,7 +125,7 @@ bool saveMap(Map& m, std::string file, const View::ViewPort& v)
 	return false;
 }
 
-bool loadMap(Map& m, std::string file, View::ViewPort &v, bool restore_view)
+bool loadMap(Map& m, std::string file, View::ViewPort &v)
 {
 	View::ViewPort temp_view;
 	Map temp_map;

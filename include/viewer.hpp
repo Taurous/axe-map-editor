@@ -145,7 +145,7 @@ void *viewer_thread_func(ALLEGRO_THREAD* thr, void* arg)
 		}
 	}
 
-	clearMap(map);
+	destroyMap(map);
 
 	al_destroy_timer(timer);
 	al_destroy_event_queue(evq);
