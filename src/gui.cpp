@@ -1,9 +1,12 @@
 #include "gui.hpp"
+#include <iostream>
 
 Gui::Gui(ALLEGRO_DISPLAY *display) : m_display(display), m_show_demo_window(false), m_tile_size(64)
 {
     IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
+
+    ImGuiIO& io = ImGui::GetIO();
 
 	ImGui::StyleColorsDark();
 	ImGui_ImplAllegro5_Init(display);
@@ -35,6 +38,8 @@ void Gui::render()
     (void)file_dialog_modal_type;
     
     vec2i res = getScreenSize();
+    float tracker_width = static_cast<float>(res.x) * 0.2;
+    tracker_width = tracker_width < 300 ? 300 : tracker_width;
     ALLEGRO_EVENT gui_event;
 
     ImGui_ImplAllegro5_NewFrame();
