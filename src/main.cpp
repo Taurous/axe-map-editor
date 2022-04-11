@@ -40,8 +40,6 @@ constexpr char 	DISPLAY_TITLE[]		= "Axe DnD Map";
 
 using std_clk = std::chrono::steady_clock;
 
-// Test
-
 int main()
 {
 	if (!al_init())
