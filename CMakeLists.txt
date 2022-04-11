@@ -24,12 +24,10 @@ target_link_libraries(${PROJECT_NAME} allegro allegro_main allegro_primitives al
 else()
 
 add_executable(${PROJECT_NAME}
-    src/web.cpp
     src/lerp.cpp
     src/util.cpp
     src/view.cpp
     src/input.cpp
-    src/initiative_tracker.cpp
     src/gui.cpp
     src/map.cpp
     src/map_editor.cpp

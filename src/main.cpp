@@ -26,6 +26,7 @@
 #include <allegro5/allegro_primitives.h>
 #include <allegro5/allegro_native_dialog.h>
 
+#include "file_dialog.hpp"
 #include "gui.hpp"
 #include "util.hpp"
 #include "input.hpp"
@@ -64,6 +65,9 @@ int main()
 
 	std_clk::time_point current_time;
 	double delta_time;
+
+	bool file_dialog_open = false;
+	AsyncDialog *file_dialog = nullptr;
 
 	bool redraw = true;
 	bool quit = false;
@@ -151,10 +155,10 @@ int main()
 				quit = true;
 			break;
 
-			/*case AXE_GUI_EVENT_FILE_DIALOG_CREATE:
+			case AXE_GUI_EVENT_FILE_DIALOG_CREATE:
 				if (!file_dialog_open)
 				{
-					file_dialog = spawn_file_dialog(display, &gui_event_source, getHomeDir() + "/Pictures/", static_cast<DIALOG_TYPE>(ev.user.data1));
+					file_dialog = spawn_file_dialog(display, gui.getEventSource(), getHomeDir() + "/Pictures/", DIALOG_TYPE::NEW);
 				}
 				file_dialog_open = true;
 			break;
@@ -181,7 +185,7 @@ int main()
 					stop_file_dialog(file_dialog);
 					file_dialog_open = false;
 				}
-			break;*/
+			break;
 
 			case ALLEGRO_EVENT_TIMER:
 				current_time = std_clk::now();

@@ -86,7 +86,9 @@ void Gui::render()
         ImGui::SameLine();
         if (ImGui::Button("..."))
         {
-            // Open File Dialog
+           gui_event.user.type = AXE_GUI_EVENT_FILE_DIALOG_CREATE;
+           gui_event.user.data1 = file_dialog_modal_type;
+           al_emit_user_event(&m_event_source, &gui_event, nullptr);
         }
         ImGui::InputInt("Tile Size", &m_tile_size);
         if (m_tile_size > 128) m_tile_size = 128;
@@ -99,10 +101,6 @@ void Gui::render()
         if (ImGui::Button("Cancel", ImVec2(120, 0))) { ImGui::CloseCurrentPopup(); }
         ImGui::EndPopup();
     }
-
-    /*gui_event.user.type = AXE_GUI_EVENT_FILE_DIALOG_CREATE;
-    gui_event.user.data1 = DIALOG_TYPE::NEW;
-    al_emit_user_event(src, &gui_event, nullptr);*/
 
     //Initiative Tracker
     ImGui::SetNextWindowSize(ImVec2(SIDE_WIDTH, res.y - BOTTOM_BAR_HEIGHT - main_menu_height), ImGuiCond_Always);
