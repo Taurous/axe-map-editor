@@ -87,7 +87,7 @@ namespace View
 
 		vec2d new_tl = worldToScreen(tl, v);
 
-		al_draw_scaled_bitmap(bmp, 0, 0, sw, sh, new_tl.x, new_tl.y, sw * v.scale, sh * v.scale, 0);
+		al_draw_scaled_bitmap(bmp, 0, 0, sw, sh, new_tl.x, new_tl.y, sw * v.scale, sh * v.scale, flags);
 	}
 
 	void drawBitmapRegion(const ViewPort& v, ALLEGRO_BITMAP* bmp, const vec2d s_tl, const vec2d& s_dim, const vec2d& d_tl, int flags)
@@ -104,7 +104,7 @@ namespace View
 
 		vec2d new_tl = worldToScreen(tl, v);
 
-		al_draw_scaled_bitmap(bmp, 0, 0, sw, sh, new_tl.x, new_tl.y, sw * v.scale * scale.x, sh * v.scale * scale.y, 0);
+		al_draw_scaled_bitmap(bmp, 0, 0, sw, sh, new_tl.x, new_tl.y, sw * v.scale * scale.x, sh * v.scale * scale.y, flags);
 	}
 
 	void drawTintedBitmapRegion(const ViewPort& v, ALLEGRO_BITMAP* bmp, const vec2d s_tl, const vec2d& s_dim, const vec2d& d_tl, const ALLEGRO_COLOR& cl, int flags)

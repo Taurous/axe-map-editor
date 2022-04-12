@@ -158,7 +158,7 @@ int main()
 			case AXE_GUI_EVENT_FILE_DIALOG_CREATE:
 				if (!file_dialog_open)
 				{
-					file_dialog = spawn_file_dialog(display, gui.getEventSource(), getHomeDir() + "/Pictures/", DIALOG_TYPE::NEW);
+					file_dialog = spawn_file_dialog(display, gui.getEventSource(), getHomeDir() + "/Pictures/", static_cast<DIALOG_TYPE>(ev.user.data1));
 				}
 				file_dialog_open = true;
 			break;

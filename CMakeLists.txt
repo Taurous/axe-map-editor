@@ -4,7 +4,7 @@ project(axe-map-editor)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED true)
-set(CMAKE_CXX_FLAGS "-g -Wall -D_DEBUG")
+set(CMAKE_CXX_FLAGS "-Wall -Wextra")
 
 if(WIN32)
 

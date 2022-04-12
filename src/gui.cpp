@@ -32,8 +32,7 @@ bool Gui::captureInput()
 void Gui::render()
 {
     bool show_file_dialog_modal = false;
-    DIALOG_TYPE file_dialog_modal_type;
-    (void)file_dialog_modal_type;
+    static DIALOG_TYPE file_dialog_modal_type;
     
     vec2i res = getScreenSize();
     float tracker_width = static_cast<float>(res.x) * 0.2;
@@ -87,7 +86,7 @@ void Gui::render()
         if (ImGui::Button("..."))
         {
            gui_event.user.type = AXE_GUI_EVENT_FILE_DIALOG_CREATE;
-           gui_event.user.data1 = file_dialog_modal_type;
+           gui_event.user.data1 = static_cast<DIALOG_TYPE>(file_dialog_modal_type);
            al_emit_user_event(&m_event_source, &gui_event, nullptr);
         }
         ImGui::InputInt("Tile Size", &m_tile_size);
