@@ -18,6 +18,7 @@ enum
 {
     AXE_GUI_EVENT_ADD_CREATURE = ALLEGRO_GET_EVENT_TYPE('G','A','X','E'),
     AXE_GUI_EVENT_QUIT,
+    AXE_GUI_EVENT_NEW_MAP,
     AXE_GUI_EVENT_LOAD_MAP,
     AXE_GUI_EVENT_FILE_DIALOG_CREATE,
     AXE_GUI_EVENT_FILE_DIALOG_FINISHED
@@ -37,6 +38,7 @@ public:
 
     void render();
     void setFileBufferText(std::string path);
+    std::string getFileBufferText() { return std::string(Gui::load_file_buffer); }
 
     ALLEGRO_EVENT_SOURCE *getEventSource();
 

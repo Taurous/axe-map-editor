@@ -172,12 +172,10 @@ int main()
 						switch (file_dialog->type)
 						{
 							case DIALOG_TYPE::NEW:
-								//map_editor.create(path, 32); // TODO: Get tile size. (Open modal, then in modal spawn the file dialog to enter path into text box)
 								gui.setFileBufferText(path);
 							break;
 							case DIALOG_TYPE::LOAD:
 								gui.setFileBufferText(path);
-								//map_editor.load(path); // Will not work until properly implement saving.
 							break;
 							default:
 							break;
@@ -187,6 +185,10 @@ int main()
 					stop_file_dialog(file_dialog);
 					file_dialog_open = false;
 				}
+			break;
+
+			case AXE_GUI_EVENT_NEW_MAP:
+				map_editor.create(gui.getFileBufferText(), static_cast<int>(ev.user.data2));
 			break;
 
 			case ALLEGRO_EVENT_TIMER:

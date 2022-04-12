@@ -99,7 +99,14 @@ void Gui::render()
         else if (m_tile_size < 8) m_tile_size = 8;
 
         ImGui::Separator();
-        if (ImGui::Button("OK", ImVec2(120, 0))) { ImGui::CloseCurrentPopup(); }
+        if (ImGui::Button("OK", ImVec2(120, 0)))
+        {
+            gui_event.user.type = AXE_GUI_EVENT_NEW_MAP;
+            gui_event.user.data1 = static_cast<DIALOG_TYPE>(file_dialog_modal_type);
+            gui_event.user.data2 = m_tile_size;
+           al_emit_user_event(&m_event_source, &gui_event, nullptr);
+            ImGui::CloseCurrentPopup();
+        }
         ImGui::SetItemDefaultFocus();
         ImGui::SameLine();
         if (ImGui::Button("Cancel", ImVec2(120, 0))) { ImGui::CloseCurrentPopup(); }
