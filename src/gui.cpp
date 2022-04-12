@@ -1,6 +1,8 @@
 #include "gui.hpp"
 #include <iostream>
 
+char Gui::load_file_buffer[256] = {0};
+
 Gui::Gui(ALLEGRO_DISPLAY *display) : m_display(display), m_show_demo_window(false), m_tile_size(64)
 {
     IMGUI_CHECKVERSION();
@@ -16,6 +18,11 @@ Gui::~Gui()
 {
     ImGui_ImplAllegro5_Shutdown();
 	ImGui::DestroyContext();
+}
+
+void Gui::setFileBufferText(std::string path)
+{
+    strcpy(Gui::load_file_buffer, path.c_str());
 }
 
 ALLEGRO_EVENT_SOURCE *Gui::getEventSource()
@@ -78,10 +85,8 @@ void Gui::render()
     ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
     if (ImGui::BeginPopupModal("file dialog", NULL, ImGuiWindowFlags_AlwaysAutoResize))
     {
-        size_t buf_sz = 256;
-        char buf[buf_sz] = {0};
         ImGui::Text("Choose image to load:");
-        ImGui::InputTextWithHint("##Path", getHomeDir().c_str(), buf, buf_sz);
+        ImGui::InputTextWithHint("##Path", getHomeDir().c_str(), Gui::load_file_buffer, IM_ARRAYSIZE(Gui::load_file_buffer));
         ImGui::SameLine();
         if (ImGui::Button("..."))
         {

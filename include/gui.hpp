@@ -36,6 +36,7 @@ public:
     ~Gui();
 
     void render();
+    void setFileBufferText(std::string path);
 
     ALLEGRO_EVENT_SOURCE *getEventSource();
 
@@ -48,4 +49,5 @@ private:
     // Data
     bool m_show_demo_window;
     int m_tile_size;
+    static char load_file_buffer[256];
 };
