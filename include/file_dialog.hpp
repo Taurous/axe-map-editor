@@ -45,7 +45,21 @@ static AsyncDialog* spawn_file_dialog(ALLEGRO_DISPLAY* disp, ALLEGRO_EVENT_SOURC
 {
     AsyncDialog *data = new AsyncDialog;
 
-    data->file_dialog = al_create_native_file_dialog(initial_path.c_str(), "Choose Map Image", "*.jpg;*.jpeg;*.png;*.tga;*.tga", ALLEGRO_FILECHOOSER_PICTURES);
+    switch (type)
+    {
+        case DIALOG_TYPE::NEW:
+            data->file_dialog = al_create_native_file_dialog(initial_path.c_str(), "Choose Map Image", "*.jpg;*.jpeg;*.png;*.tga;*.tga", ALLEGRO_FILECHOOSER_PICTURES);
+        break;
+        case DIALOG_TYPE::LOAD:
+            data->file_dialog = al_create_native_file_dialog(initial_path.c_str(), "Load Map", "*.mdf", ALLEGRO_FILECHOOSER_FILE_MUST_EXIST);
+        break;
+        default:
+            std::cerr << "Passed invalid type (" << type << ") to spawn_file_dialog()\n";
+            delete data;
+            return nullptr;
+        break;
+    }
+
     data->display = disp;
     data->evt_src = src;
     data->type = type;

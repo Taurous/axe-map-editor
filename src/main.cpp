@@ -61,7 +61,7 @@ int main()
 	ALLEGRO_EVENT_QUEUE*	ev_queue		= nullptr;
 	ALLEGRO_TIMER*			timer			= nullptr;
 	ALLEGRO_THREAD*			viewer_thread	= nullptr;
-	ALLEGRO_EVENT ev;
+	ALLEGRO_EVENT			ev;
 
 	std_clk::time_point current_time;
 	double delta_time;
@@ -188,7 +188,10 @@ int main()
 			break;
 
 			case AXE_GUI_EVENT_NEW_MAP:
-				map_editor.create(gui.getFileBufferText(), static_cast<int>(ev.user.data2));
+				if (map_editor.create(gui.getFileBufferText(), static_cast<int>(ev.user.data2)))
+				{
+					viewer_args.image_path = gui.getFileBufferText();
+				}
 			break;
 
 			case ALLEGRO_EVENT_TIMER:

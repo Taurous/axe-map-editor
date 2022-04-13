@@ -38,8 +38,7 @@ bool Gui::captureInput()
 
 void Gui::render()
 {
-    bool show_file_dialog_modal = false;
-    static DIALOG_TYPE file_dialog_modal_type;
+    state = GUI_STATE::NORMAL;
     
     vec2i res = getScreenSize();
     float tracker_width = static_cast<float>(res.x) * 0.2;
@@ -52,46 +51,34 @@ void Gui::render()
     if (m_show_demo_window) ImGui::ShowDemoWindow(&m_show_demo_window);
 
     // Main Menu
-    float main_menu_height = 0;
-    if (ImGui::BeginMainMenuBar())
-    {
-        if (ImGui::BeginMenu("File"))
-        {
-            if (ImGui::MenuItem("New Map"))
-            {
-                show_file_dialog_modal = true;
-                file_dialog_modal_type = DIALOG_TYPE::NEW;
-            }
-            if (ImGui::MenuItem("Load Map"))
-            {
-                show_file_dialog_modal = true;
-                file_dialog_modal_type = DIALOG_TYPE::LOAD;
-            }
-            if (ImGui::MenuItem("Show Demo Window")) m_show_demo_window = true;
-            if (ImGui::MenuItem("Exit"))
-            { 
-                gui_event.user.type = AXE_GUI_EVENT_QUIT;
-                al_emit_user_event(&m_event_source, &gui_event, nullptr);
-            };
-            ImGui::EndMenu();
-        }
-        main_menu_height = ImGui::GetWindowHeight();
-        ImGui::EndMainMenuBar();
-    }
+    float main_menu_height = renderMainMenu();
 
-    if (show_file_dialog_modal) ImGui::OpenPopup("file dialog");
+    switch (state)
+    {
+        case GUI_STATE::CREATE_POPUP:
+            ImGui::OpenPopup("Create Map");
+        break;
+        case GUI_STATE::LOAD_POPUP:
+            //ImGui::OpenPopup("Load Map");
+        break;
+        case GUI_STATE::SAVE_POPUP:
+            //ImGui::OpenPopup("Save Map");
+        break;
+        default:
+        break;
+    }
 
     ImVec2 center = ImGui::GetMainViewport()->GetCenter();
     ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
-    if (ImGui::BeginPopupModal("file dialog", NULL, ImGuiWindowFlags_AlwaysAutoResize))
+    if (ImGui::BeginPopupModal("Create Map", NULL, ImGuiWindowFlags_AlwaysAutoResize))
     {
         ImGui::Text("Choose image to load:");
-        ImGui::InputTextWithHint("##Path", getHomeDir().c_str(), Gui::load_file_buffer, IM_ARRAYSIZE(Gui::load_file_buffer));
+        ImGui::InputText("##Path", Gui::load_file_buffer, IM_ARRAYSIZE(Gui::load_file_buffer));
         ImGui::SameLine();
         if (ImGui::Button("..."))
         {
            gui_event.user.type = AXE_GUI_EVENT_FILE_DIALOG_CREATE;
-           gui_event.user.data1 = static_cast<DIALOG_TYPE>(file_dialog_modal_type);
+           gui_event.user.data1 = static_cast<DIALOG_TYPE>(DIALOG_TYPE::NEW);
            al_emit_user_event(&m_event_source, &gui_event, nullptr);
         }
         ImGui::InputInt("Tile Size", &m_tile_size);
@@ -102,7 +89,7 @@ void Gui::render()
         if (ImGui::Button("OK", ImVec2(120, 0)))
         {
             gui_event.user.type = AXE_GUI_EVENT_NEW_MAP;
-            gui_event.user.data1 = static_cast<DIALOG_TYPE>(file_dialog_modal_type);
+            gui_event.user.data1 = static_cast<DIALOG_TYPE>(DIALOG_TYPE::NEW);
             gui_event.user.data2 = m_tile_size;
            al_emit_user_event(&m_event_source, &gui_event, nullptr);
             ImGui::CloseCurrentPopup();
@@ -113,9 +100,51 @@ void Gui::render()
         ImGui::EndPopup();
     }
 
-    //Initiative Tracker
-    ImGui::SetNextWindowSize(ImVec2(SIDE_WIDTH, res.y - BOTTOM_BAR_HEIGHT - main_menu_height), ImGuiCond_Always);
-    ImGui::SetNextWindowPos(ImVec2(res.x-SIDE_WIDTH, main_menu_height), ImGuiCond_Always);
+    renderInitiativeTracker(main_menu_height);
+
+    ImGui::Render();
+
+    ImGui_ImplAllegro5_RenderDrawData(ImGui::GetDrawData());
+}
+
+int Gui::renderMainMenu()
+{
+    int height = 0;
+
+    if (ImGui::BeginMainMenuBar())
+    {
+        if (ImGui::BeginMenu("File"))
+        {
+            if (ImGui::MenuItem("New Map"))
+            {
+                memset(Gui::load_file_buffer, 0, sizeof(Gui::load_file_buffer));
+                state = GUI_STATE::CREATE_POPUP;
+            }
+            if (ImGui::MenuItem("Load Map"))
+            {
+                memset(Gui::load_file_buffer, 0, sizeof(Gui::load_file_buffer));
+                state = GUI_STATE::LOAD_POPUP;
+            }
+            if (ImGui::MenuItem("Show Demo Window")) m_show_demo_window = true;
+            if (ImGui::MenuItem("Exit"))
+            { 
+                ALLEGRO_EVENT ev;
+                ev.user.type = AXE_GUI_EVENT_QUIT;
+                al_emit_user_event(&m_event_source, &ev, nullptr);
+            };
+            ImGui::EndMenu();
+        }
+        height = ImGui::GetWindowHeight();
+        ImGui::EndMainMenuBar();
+    }
+
+    return height;
+}
+
+void Gui::renderInitiativeTracker(int menu_height)
+{
+    ImGui::SetNextWindowSize(ImVec2(SIDE_WIDTH, getScreenSize().y - BOTTOM_BAR_HEIGHT - menu_height), ImGuiCond_Always);
+    ImGui::SetNextWindowPos(ImVec2(getScreenSize().x-SIDE_WIDTH, menu_height), ImGuiCond_Always);
     if (!ImGui::Begin("Initiative Tracker", nullptr,
         ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse)) ImGui::End();
     else
@@ -135,20 +164,12 @@ void Gui::render()
 
         if (ImGui::Button("Next"))
         {
-            //std::string front = creatures.front();
-            //creatures.pop_front();
-            //creatures.push_back(front);
         }
         ImGui::SameLine();
         if (ImGui::Button("Add Creature"))
         {
-            //creatures.push_back("Creature");
         }
 
         ImGui::End();
     }
-
-    ImGui::Render();
-
-    ImGui_ImplAllegro5_RenderDrawData(ImGui::GetDrawData());
 }
