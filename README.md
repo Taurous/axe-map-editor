@@ -11,9 +11,9 @@ TODO
 ### Dependencies
 
 * [Allegro 5.2.7](https://github.com/liballeg/allegro5)
-* GCC Compiler
-* CMake
-* On Windows - MSYS2 + MinGW
+* [curlpp](https://github.com/jpbarrette/curlpp)
+* [nlohmann json](https://github.com/nlohmann/json)
+* C++17 Standard
 
 ### Installing
 
@@ -29,10 +29,11 @@ TODO
 #### Linux
 
 ##### APT
-``` sudo apt install liballegro5-dev```
+``` sudo apt install liballegro5-dev nlohmann-json3-dev libcurlpp-dev```
 
 * Download the source, then cd into axe-map-editor.
-* Create a build/ directory and cd into it. Run `cmake ..` then `make all` to build the program.
+* If on windows you will need to edit the cmake file to point to where you have allegro installed. By default it looks in C:/libraries/allegro.
+* Create a build/ directory and cd into it. Run `cmake ..` to build the program.
 
 ### Executing program
 

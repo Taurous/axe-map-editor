@@ -81,6 +81,13 @@ void InputHandler::getInput(const ALLEGRO_EVENT &ev)
 	};
 }
 
+void InputHandler::releaseKeys()
+{
+	memset(keys_pressed,  false, sizeof(bool) * CUSTOM_ALLEGRO_KEY_MAX);
+	memset(keys_held, 	  false, sizeof(bool) * CUSTOM_ALLEGRO_KEY_MAX);
+	memset(keys_released, false, sizeof(bool) * CUSTOM_ALLEGRO_KEY_MAX);
+}
+
 bool InputHandler::isKeyPressed(const int key, const int mod) const
 {
 	return keys_pressed[key] && (mod == -1 || mod & modifiers);
@@ -132,19 +139,20 @@ void InputHandler::setKeybind(int key, std::function<void(void)> callback, bool 
 	else keybinds_r[key] = callback;
 }
 
+// TODO: Need to make keybinds easier to clear, attach some sort of meta data about who created the keybind?
 void InputHandler::clearKeybind(int key)
 {
-	//TODO Untested
 	auto it = keybinds_p.find(key);
-	if (it != keybinds_p.end())
-	{
-		keybinds_p.erase(it);
-		return;
-	}
+	if (it != keybinds_p.end()) keybinds_p.erase(it);
 
 	it = keybinds_r.find(key);
-
 	if (it != keybinds_r.end()) keybinds_r.erase(it);
+}
+
+void InputHandler::clearKeybinds()
+{
+	keybinds_p.clear();
+	keybinds_r.clear();
 }
 
 void InputHandler::callKeybind(int key, bool pressed)

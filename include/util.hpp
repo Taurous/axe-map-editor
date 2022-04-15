@@ -4,5 +4,6 @@
 #include "vec.hpp"
 
 vec2i getScreenSize();
-void printAllegroVersion();
+std::string getAllegroVersionStr();
 ALLEGRO_DISPLAY *createDisplay(std::string title, int width, int height, int flags);
+std::string getHomeDir();

@@ -1,6 +1,7 @@
 build/
 unused
 .VSCodeCounter
+imgui.ini
 
 ##### Windows
 # Windows thumbnail cache files

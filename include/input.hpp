@@ -34,6 +34,7 @@ public:
 	~InputHandler();
 
 	void getInput(const ALLEGRO_EVENT &ev);
+	void releaseKeys();
 
 	bool isKeyPressed(const int key, const int mod = -1) const;
 	bool isKeyReleased(const int key, const int mod = -1) const;
@@ -52,6 +53,7 @@ public:
 
 	void setKeybind(int key, std::function<void(void)> callback, bool onPressed = true);
 	void clearKeybind(int key);
+	void clearKeybinds();
 	void callKeybind(int key, bool pressed = true);
 	
 private:

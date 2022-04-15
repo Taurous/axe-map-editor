@@ -23,22 +23,22 @@ struct ViewerArgs
 	ALLEGRO_EVENT_SOURCE *event_source;
 };
 
-static void *viewer_thread_func(ALLEGRO_THREAD* thr, void* arg)
+void *viewer_thread_func(ALLEGRO_THREAD* thr, void* arg)
 {
-	ALLEGRO_DISPLAY* display = nullptr;
-	ALLEGRO_EVENT_QUEUE* evq = nullptr;
-	ALLEGRO_TIMER* timer = nullptr;
-	ALLEGRO_EVENT ev;
-	std_clk::time_point current_time;
-	double delta_time;
-	bool running = true;
-	bool redraw = true;
+	ALLEGRO_DISPLAY* 		display 		= nullptr;
+	ALLEGRO_EVENT_QUEUE* 	evq 			= nullptr;
+	ALLEGRO_TIMER* 			timer 			= nullptr;
+	ALLEGRO_EVENT 			ev;
+	std_clk::time_point 	current_time;
+	double 					delta_time;
+	bool 					running 		= true;
+	bool 					redraw 			= true;
 
 	ViewerArgs *args = (ViewerArgs*)arg;
-	View view;
+	View::ViewPort view;
 	view.size = args->display_size;
 	view.screen_pos = { 0, 0 };
-	view.scale = { 1, 1 };
+	view.scale = 1.0;
 	view.world_pos = { 0, 0 };
 	Map map;
 	bool grid = true;
@@ -100,11 +100,11 @@ static void *viewer_thread_func(ALLEGRO_THREAD* thr, void* arg)
 			break;
 
 			case AXE_EDITOR_EVENT_ZOOM_IN:
-				if (view.scale.x < 5.0) view.scale += { 0.1, 0.1 };
+				if (view.scale < 5.0) view.scale += 0.1;
 			break;
 
 			case AXE_EDITOR_EVENT_ZOOM_OUT:
-				if (view.scale.x > 0.1) view.scale -= { 0.1, 0.1 };
+				if (view.scale >= 0.2) view.scale -= 0.1;
 			break;
 
 			case ALLEGRO_EVENT_TIMER:
@@ -145,7 +145,7 @@ static void *viewer_thread_func(ALLEGRO_THREAD* thr, void* arg)
 		}
 	}
 
-	clearMap(map);
+	destroyMap(map);
 
 	al_destroy_timer(timer);
 	al_destroy_event_queue(evq);

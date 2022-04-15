@@ -37,13 +37,9 @@ public:
 	vec2& operator*=(const T& rhs) { x *= rhs; y *= rhs; return *this; }
 	vec2& operator/=(const T& rhs) { x /= rhs; y /= rhs; return *this; }
 
-	//Comparison ( Commented < > out because it doesn't make a lot of sense)
+	//Comparison
 	friend bool operator==(const vec2& lhs, const vec2& rhs) { return std::tie(lhs.x, lhs.y) == std::tie(rhs.x, rhs.y); }
 	friend bool operator!=(const vec2& lhs, const vec2& rhs) { return !(lhs == rhs); }
-	/*friend bool operator< (const vec2& lhs, const vec2& rhs) { return std::tie(lhs.x, lhs.y) < std::tie(rhs.x, rhs.y); }
-	friend bool operator>=(const vec2& lhs, const vec2& rhs) { return !(lhs < rhs); }
-	friend bool operator> (const vec2& lhs, const vec2& rhs) { return rhs < lhs; }
-	friend bool operator<=(const vec2& lhs, const vec2& rhs) { return !(rhs < lhs); }*/
 
 	//Stream
 	friend std::ostream& operator<<(std::ostream& os, const vec2& v)
@@ -75,8 +71,7 @@ template <typename T> vec2<T> operator/(const vec2<T>& lhs, const vec2<T>& rhs) 
 template <typename T> vec2<T> operator*(const T& lhs, const vec2<T>& rhs) { return vec2<T>(rhs) *= lhs; }
 template <typename T> vec2<T> operator*(const vec2<T>& lhs, const T& rhs) { return vec2<T>(lhs) *= rhs; }
 template <typename T> vec2<T> operator/(const vec2<T>& lhs, const T& rhs) { return vec2<T>(lhs) /= rhs; }
-//Commented out because dividing a scalar by a vector makes no sense?
-//template <typename T> vec2<T> operator/(const T* lhs, const vec2<T>& rhs) { return vec2<T>(lhs / rhs.x, lhs / rhs.y); }
+template <typename T> vec2<T> operator/(const T* lhs, const vec2<T>& rhs) { return vec2<T>(lhs / rhs.x, lhs / rhs.y); }
 
 //Helper Functions
 template <typename T> T dotProduct(const vec2<T>& v1, const vec2<T>& v2) { return v1.x * v2.x + v1.y * v2.y; }

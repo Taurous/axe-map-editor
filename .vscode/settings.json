@@ -1,4 +1,5 @@
 {
+    "editor.fontSize": 18,
     "files.associations": {
         "ostream": "cpp",
         "iosfwd": "cpp",
@@ -55,7 +56,12 @@
         "map": "cpp",
         "compare": "cpp",
         "concepts": "cpp",
-        "numbers": "cpp"
+        "numbers": "cpp",
+        "forward_list": "cpp",
+        "valarray": "cpp",
+        "filesystem": "cpp",
+        "codecvt": "cpp"
     },
-    "cmake.sourceDirectory": "${workspaceFolder}/."
+    "cmake.sourceDirectory": "${workspaceFolder}/.",
+    "C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools"
 }
