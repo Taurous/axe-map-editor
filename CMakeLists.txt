@@ -14,12 +14,39 @@ add_executable(${PROJECT_NAME}
     src/util.cpp
     src/view.cpp
     src/input.cpp
+    src/gui.cpp
     src/map.cpp
     src/map_editor.cpp
     src/main.cpp
 )
-target_include_directories(${PROJECT_NAME} PRIVATE C:/libraries/allegro/include include)
-target_link_libraries(${PROJECT_NAME} allegro allegro_main allegro_primitives allegro_font allegro_ttf allegro_image allegro_color allegro_dialog)
+
+add_library(imgui
+    ../imgui/imgui.cpp
+    ../imgui/imgui_tables.cpp
+    ../imgui/imgui_draw.cpp
+    ../imgui/imgui_widgets.cpp
+    ../imgui/backends/imgui_impl_allegro5.cpp
+    ../imgui/imgui_demo.cpp
+)
+
+target_include_directories(imgui PUBLIC
+    ../imgui/
+    ../imgui/backends
+    C:/libraries/allegro/include
+)
+target_include_directories(${PROJECT_NAME} PRIVATE
+    C:/libraries/allegro/include
+    include
+)
+
+target_include_directories(${PROJECT_NAME} PRIVATE
+    include
+    C:/libraries/allegro/include
+    ../imgui/
+    ../imgui/backends/
+)
+
+target_link_libraries(${PROJECT_NAME} imgui allegro allegro_main allegro_primitives allegro_font allegro_ttf allegro_image allegro_color allegro_dialog)
 
 else()
 
