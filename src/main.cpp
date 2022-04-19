@@ -42,6 +42,12 @@ using std_clk = std::chrono::steady_clock;
 
 int main()
 {
+#if defined(__linux__)
+	std::cout << "Hello, World from Linux!\n";
+#elif defined(_WIN32)
+	std::cout << "Hello, World from Windows!\n";
+#endif
+
 	if (!al_init())
 	{
 		std::cerr << "Failed to load Allegro!" << std::endl;
