@@ -60,8 +60,13 @@
         "forward_list": "cpp",
         "valarray": "cpp",
         "filesystem": "cpp",
-        "codecvt": "cpp"
+        "codecvt": "cpp",
+        "charconv": "cpp",
+        "format": "cpp",
+        "span": "cpp",
+        "variant": "cpp"
     },
     "cmake.sourceDirectory": "${workspaceFolder}/.",
-    "C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools"
+    "C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools",
+    "libraries": "C:/dev/libraries"
 }

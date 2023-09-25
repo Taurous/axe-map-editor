@@ -1,0 +1,32 @@
+{
+    "tasks": [
+        {
+            "type": "cppbuild",
+            "label": "C/C++: g++.exe build active file",
+            "command": "C:/msys64/ucrt64/bin/g++.exe",
+            "args": [
+                "-I${workspaceFolder}/include",
+                "-L${config:libraries}/allegro/lib",
+                "-I${config:libraries}/allegro/include",
+                "-fdiagnostics-color=always",
+                "-g",
+                "${workspaceFolder}/src/*.cpp",
+                "-o",
+                "${workspaceFolder}/build/axe-map-editor.exe",
+                "-lallegro-debug", "-lallegro_primitives-debug"
+            ],
+            "options": {
+                "cwd": "${fileDirname}"
+            },
+            "problemMatcher": [
+                "$gcc"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "detail": "Debug Build."
+        }
+    ],
+    "version": "2.0.0"
+}

@@ -48,7 +48,7 @@ public:
 		return os;
 	}
 
-	bool isInBounds(vec2<T> top_left, vec2<T> bottom_right) { return (x > top_left.x && x < bottom_right.x && y > top_left.y && y < bottom_right.y); }
+	bool isInBounds(vec2<T> top_left, vec2<T> bottom_right) { return (x >= top_left.x && x <= bottom_right.x && y >= top_left.y && y <= bottom_right.y); }
 	std::string str()
 	{
 		std::stringstream ss;

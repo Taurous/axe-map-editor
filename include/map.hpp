@@ -4,31 +4,40 @@
 
 #include <vector>
 
-struct Map
+struct Line
 {
-	ALLEGRO_BITMAP* bmp = nullptr;
-	std::string path;
-	int width;
-	int height;
-	int tile_size;
-	bool needs_save;
-
-	std::vector<bool> v_tiles;
+	vec2i start;
+	vec2i end;
 };
 
-bool createMap(Map& m, std::string path_to_map, int tile_size);
-void destroyMap(Map& m);
-bool reloadMap(Map& m);
+struct Tile
+{
+	vec2i position;
+	std::string label;
+};
 
-bool saveMap(Map& m, std::string file, const View::ViewPort& v);
-bool loadMap(Map& m, std::string file, View::ViewPort& v);
+class Map
+{
+public:
+	Map();
+	~Map();
 
-void drawMap(const Map& m, const View::ViewPort& v, bool draw_grid, bool show_hidden);
+	void draw(const View::ViewPort& v, const bool& draw_grid);
 
-void hideTile(Map& m, const vec2i& position);
-void showTile(Map& m, const vec2i& position);
-void setTile(Map& m, const vec2i& position, bool show);
-bool isTileShown(const Map& m, const vec2i& position);
+	void setTile(const vec2i& position, const std::string& label);
+	Tile getTile(const vec2i& position);
+	void removeTile(const vec2i& position);
+	bool tileExists(const vec2i& position);
 
-vec2i getTilePos(const Map& m, const View::ViewPort& v, const vec2d& screen_pos);
-void getVisibleTileRect(const Map& m, const View::ViewPort& v, vec2i& tl, vec2i& br);
+	void addLine(const Line& line);
+
+	vec2i getTilePos(const View::ViewPort& v, const vec2d& screen_pos);
+	void getVisibleTileRect(const View::ViewPort& v, vec2i& tl, vec2i& br);
+
+private:
+	std::vector<Line> lines;
+	std::vector<Tile> tiles;
+
+	void drawGrid(const View::ViewPort& v);
+};
+

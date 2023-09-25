@@ -25,7 +25,8 @@ namespace View
 		vec2d new_v1 = worldToScreen(v1, v);
 		vec2d new_v2 = worldToScreen(v2, v);
 
-		al_draw_line(new_v1.x, new_v1.y, new_v2.x, new_v2.y, cl, std::max(line_width * v.scale, 1.0));
+		//al_draw_line(new_v1.x, new_v1.y, new_v2.x, new_v2.y, cl, std::max(line_width * v.scale, 1.0)); Vary width with scale
+		al_draw_line(new_v1.x, new_v1.y, new_v2.x, new_v2.y, cl, line_width);
 	}
 
 	void drawTriangle(const ViewPort& v, const vec2d& v1, const vec2d& v2, const vec2d v3, const ALLEGRO_COLOR& cl, double line_width)

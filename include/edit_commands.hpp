@@ -1,5 +1,6 @@
 #pragma once
 
+#include <iostream>
 #include <vector>
 #include <memory>
 
@@ -11,54 +12,37 @@
 class SetTileCommand : public Command
 {
 public:
-	SetTileCommand(Map& map, vec2i position, bool show) : m(map), s(show) { p.push_back(position); redo(); }
-	SetTileCommand(Map& map, std::vector<vec2i> positions, bool show) : m(map), p(positions), s(show) { redo(); }
-	void redo() override { for (auto &t : p) setTile(m, t, s); }
-	void undo() override { for (auto &t : p) setTile(m, t, !s); }
+	SetTileCommand(Map& map, const vec2i& position, const std::string& label) : m(map) {
+		prev_t = map.getTile(position);
+		new_t.position = position;
+		new_t.label = label;
+		redo();
+	}
+	void redo() override { m.setTile(new_t.position, new_t.label); std::cout << "SetTileCommand Executed at: " << new_t.position << " with label: " << new_t.label << "\n"; }
+	void undo() override {
+		if (prev_t.label == "null")
+			m.removeTile(new_t.position);
+		else
+			m.setTile(prev_t.position, prev_t.label);
+	}
 
 private:
 	Map& m;
-	std::vector<vec2i> p;
-	bool s;
+	Tile new_t;
+	Tile prev_t;
 };
 
-class FillTileCommand : public Command
+class DeleteTileCommand : public Command
 {
 public:
-	FillTileCommand(Map& map, bool show, vec2i start_fill, vec2i end_fill) : s_fill(start_fill), e_fill(end_fill)
-	{
-		std::vector<vec2i> tiles;
-		vec2i t_start_fill, t_end_fill;
-
-		t_start_fill.x = std::min(s_fill.x, e_fill.x);
-		t_start_fill.y = std::min(s_fill.y, e_fill.y);
-		t_end_fill.x = std::max(s_fill.x, e_fill.x);
-		t_end_fill.y = std::max(s_fill.y, e_fill.y);
-
-		for (int x = t_start_fill.x; x <= t_end_fill.x; ++x)
-		{
-			for (int y = t_start_fill.y; y <= t_end_fill.y; ++y)
-			{
-				if (isTileShown(map, vec2i{x, y}) != show) tiles.push_back(vec2i{x, y});
-			}
-		}
-
-		cmd = std::make_unique<SetTileCommand>(map, tiles, show);
+	DeleteTileCommand(Map& map, const vec2i& position) : m(map) {
+		prev_t = map.getTile(position);
 		redo();
 	}
-
-	void redo() override
-	{
-		cmd->redo();
-	}
-	void undo() override
-	{
-		cmd->undo();
-	}
+	void redo() override { m.removeTile(prev_t.position); std::cout << "DeleteTileCommand Executed at: " << prev_t.position << "\n"; }
+	void undo() override { m.setTile(prev_t.position, prev_t.label); }
 
 private:
-	vec2i s_fill;
-	vec2i e_fill;
-
-	std::unique_ptr<SetTileCommand> cmd;
+	Map& m;
+	Tile prev_t;
 };
