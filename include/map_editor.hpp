@@ -44,6 +44,8 @@ private: // TODO Reorganize
 	Map map;
 
 	bool drawing_line;
+	vec2d line_begin;
+	double hover_radius;
 
 	bool dragging;
 	vec2i dragging_mouse_begin;

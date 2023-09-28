@@ -70,7 +70,7 @@ void Map::drawGrid(const View::ViewPort& v)
 				step = 0;
 				y -= dash_length;
 			}
-			View::drawLine(v, { horizontal_begin + (count * TILE_SZ), y }, { horizontal_begin + (count * TILE_SZ), y + dash_length }, al_map_rgb(40, 40, 40), 1);
+			View::drawLine(v, vec2i{ horizontal_begin + (count * TILE_SZ), y }, vec2i{ horizontal_begin + (count * TILE_SZ), y + dash_length }, al_map_rgb(40, 40, 40), 1);
 			++step;
 		}
 		step = 0;
@@ -88,7 +88,7 @@ void Map::drawGrid(const View::ViewPort& v)
 				step = 0;
 				x -= dash_length;
 			}
-			View::drawLine(v, { x, vertical_begin + (count * TILE_SZ) }, { x + dash_length, vertical_begin + (count * TILE_SZ) }, al_map_rgb(40, 40, 40), 1);
+			View::drawLine(v, vec2i{ x, vertical_begin + (count * TILE_SZ) }, vec2i{ x + dash_length, vertical_begin + (count * TILE_SZ) }, al_map_rgb(40, 40, 40), 1);
 			++step;
 		}
 		step = 0;

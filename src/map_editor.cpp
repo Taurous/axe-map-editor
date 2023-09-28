@@ -10,6 +10,8 @@ constexpr size_t UNDO_STACK_LIMIT = 50;
 constexpr double MIN_ZOOM = 0.62;
 constexpr double MAX_ZOOM = 2.19;
 constexpr double ZOOM_FACTOR = 0.08;
+constexpr double DEFAULT_HOVER_RADIUS = 0.3;
+constexpr double DRAWING_HOVER_RADIUS = 0.5;
 
 //Returns false if user is not hovering over a vertex, fills ret_vert with vertex info when return true
 bool getHoveredVert(vec2d& ret_vert, double hover_distance, const vec2d& mouse_position, const Map& map, const View::ViewPort& view);
@@ -21,13 +23,11 @@ void MapEditor::resizeView(vec2i view_pos, vec2i view_size)
 }
 
 MapEditor::MapEditor(InputHandler *input, vec2i view_pos, vec2i view_size)
-	: m_input(input), drawing_line(false), dragging(false), draw_grid(true), hovering_vertex(false)
+	: m_input(input), drawing_line(false), dragging(false), draw_grid(true), hovering_vertex(false), hover_radius(DEFAULT_HOVER_RADIUS)
 {
 	view.world_pos = {0.0, 0.0};
 	view.scale = 1.0;
 	resizeView(view_pos, view_size);
-
-	map.setTile({ 0, 0 }, "test");
 
 	enableKeybinds();
 }
@@ -43,7 +43,7 @@ void MapEditor::handleEvents(const ALLEGRO_EVENT &ev)
 	if (ev.type == ALLEGRO_EVENT_MOUSE_AXES)
 	{
 		vec2d vertex;
-		if (getHoveredVert(vertex, 0.25, m_input->getMousePos(), map, view))
+		if (getHoveredVert(vertex, hover_radius, m_input->getMousePos(), map, view))
 		{
 			hovered_vertex = vertex;
 			hovering_vertex = true;
@@ -78,10 +78,15 @@ void MapEditor::draw()
 {
 	map.draw(view, draw_grid);
 
-	if (hovering_vertex)
+	if (drawing_line)
 	{
-		View::drawFilledCircle(view, hovered_vertex, 4, al_map_rgb(255, 0 ,0));
-		View::drawCircle(view, hovered_vertex, 0.25 * map.getTileSz(), al_map_rgb(255, 0 ,0), 1);
+		View::drawLine(view, line_begin, hovered_vertex, al_map_rgb(30, 30, 100), 4);
+		View::drawFilledCircle(view, line_begin, 6, al_map_rgb(30, 30, 150));
+		View::drawFilledCircle(view, hovered_vertex, 6, al_map_rgb(30, 30, 150));
+	}
+	else if (hovering_vertex)
+	{
+		View::drawFilledCircle(view, hovered_vertex, 6, al_map_rgb(30, 30, 150));
 	}
 }
 
@@ -116,19 +121,49 @@ void MapEditor::onMiddleMouseDown()
 }
 void MapEditor::onLeftMouseUp()
 {
+	if (drawing_line)
+	{
+		hover_radius = 	DEFAULT_HOVER_RADIUS;
+		drawing_line = false;
+		std::cout << "(Placeholder)Line created!\n";
+		//create line with line_being and hovered_vertex
+	}
 }
 void MapEditor::onLeftMouseDown()
 {
-	pushCommand(std::make_unique<SetTileCommand>(map, map.getTilePos(view, m_input->getMousePos()), "test"));
+	if (hovering_vertex)
+	{
+		drawing_line = true;
+		line_begin = hovered_vertex;
+		hover_radius = DRAWING_HOVER_RADIUS;
+	}
+	else
+	{
+		pushCommand(std::make_unique<SetTileCommand>(map, map.getTilePos(view, m_input->getMousePos()), "test"));
+	}
 }
 
 void MapEditor::onRightMouseUp()
 {
+	if (drawing_line)
+	{
+		drawing_line = false;
+		hover_radius = 	DEFAULT_HOVER_RADIUS;
+		std::cout << "(Placeholder)Line cancelled!\n";
+		//Do not create Line
+	}
 }
 void MapEditor::onRightMouseDown()
 {
-	if (map.tileExists(map.getTilePos(view, m_input->getMousePos())))
-		pushCommand(std::make_unique<DeleteTileCommand>(map, map.getTilePos(view, m_input->getMousePos())));
+	if (hovering_vertex)
+	{
+		//draw line
+	}
+	else if (!drawing_line)
+	{
+		if (map.tileExists(map.getTilePos(view, m_input->getMousePos())))
+			pushCommand(std::make_unique<DeleteTileCommand>(map, map.getTilePos(view, m_input->getMousePos())));
+	}
 }
 
 void MapEditor::undo()
