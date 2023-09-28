@@ -40,21 +40,24 @@ public:
 
 private: // TODO Reorganize
 	InputHandler *m_input;
-
 	View::ViewPort view;
 	Map map;
 
-	vec2d dragging_mouse_begin;
-	vec2d dragging_world_begin;
-	bool dragging;
+	bool drawing_line;
 
+	bool dragging;
+	vec2i dragging_mouse_begin;
+	vec2d dragging_world_begin;
+	
 	bool draw_grid;
+
+	bool hovering_vertex;
+	vec2i hovered_vertex;
 
 	std::list<std::unique_ptr<Command>> redo_stack;
 	std::list<std::unique_ptr<Command>> undo_stack;
 
 	void pushCommand(std::unique_ptr<Command> c);
-
 	void enableKeybinds();
 	void disableKeybinds();
 };

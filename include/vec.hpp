@@ -68,10 +68,14 @@ template <typename T, typename O> vec2<T> operator*(const vec2<T>& lhs, const ve
 template <typename T> vec2<T> operator/(const vec2<T>& lhs, const vec2<T>& rhs) { return vec2<T>(lhs) /= rhs; }
 
 //Scalar multi/div
-template <typename T> vec2<T> operator*(const T& lhs, const vec2<T>& rhs) { return vec2<T>(rhs) *= lhs; }
 template <typename T> vec2<T> operator*(const vec2<T>& lhs, const T& rhs) { return vec2<T>(lhs) *= rhs; }
+template <typename T, typename V> vec2<T> operator*(const vec2<T>& lhs, const V& rhs) { return vec2<T>(lhs) *= rhs; }
+template <typename T> vec2<T> operator*(const T& lhs, const vec2<T>& rhs) { return vec2<T>(rhs) *= lhs; }
+template <typename T, typename V> vec2<T> operator*(const V& lhs, const vec2<T>& rhs) { return vec2<T>(rhs) *= lhs; }
 template <typename T> vec2<T> operator/(const vec2<T>& lhs, const T& rhs) { return vec2<T>(lhs) /= rhs; }
+template <typename T, typename V> vec2<T> operator/(const vec2<T>& lhs, const V& rhs) { return vec2<T>(lhs) /= rhs; }
 template <typename T> vec2<T> operator/(const T* lhs, const vec2<T>& rhs) { return vec2<T>(lhs / rhs.x, lhs / rhs.y); }
+template <typename T, typename V> vec2<T> operator/(const V* lhs, const vec2<T>& rhs) { return vec2<T>(lhs / rhs.x, lhs / rhs.y); }
 
 //Helper Functions
 template <typename T> T dotProduct(const vec2<T>& v1, const vec2<T>& v2) { return v1.x * v2.x + v1.y * v2.y; }
@@ -83,6 +87,8 @@ template <typename T> vec2<T> normalize(const vec2<T>& v)
 	if (mag < 0.00001f) return vec2<T>(0, 0);
 	return vec2<T>(v.x / mag, v.y / mag);
 }
+template <typename T> vec2<T> floor(const vec2<T>& v) { return vec2<T>{ floor(v.x), floor(v.y) }; }
+template <typename T> vec2<T> ceil(const vec2<T>& v) { return vec2<T>{ ceil(v.x), ceil(v.y) }; }
 template <typename T> vec2<T> absolute(const vec2<T>& v) { return vec2<T>{ abs(v.x), abs(v.y)}; }
 template <typename T> vec2<T> inverse(const vec2<T>& v1) { return vec2<T>{ 1.f / v1.x, 1.f / v1.y }; }
 template <typename T> vec2<T> vec_lerp(const vec2<T>& v1, const vec2<T>& v2, const double& t)

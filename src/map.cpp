@@ -170,3 +170,8 @@ vec2i Map::getTilePos(const View::ViewPort& v, const vec2d& screen_pos)
 
 	return n;
 }
+
+const int Map::getTileSz() const
+{
+	return TILE_SZ;
+}

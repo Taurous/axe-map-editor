@@ -11,6 +11,9 @@ constexpr double MIN_ZOOM = 0.62;
 constexpr double MAX_ZOOM = 2.19;
 constexpr double ZOOM_FACTOR = 0.08;
 
+//Returns false if user is not hovering over a vertex, fills ret_vert with vertex info when return true
+bool getHoveredVert(vec2d& ret_vert, const vec2d& mouse_position, const Map& map, const View::ViewPort& view);
+
 void MapEditor::resizeView(vec2i view_pos, vec2i view_size)
 {
 	view.size = view_size;
@@ -18,7 +21,7 @@ void MapEditor::resizeView(vec2i view_pos, vec2i view_size)
 }
 
 MapEditor::MapEditor(InputHandler *input, vec2i view_pos, vec2i view_size)
-	: m_input(input), dragging(false), draw_grid(true)
+	: m_input(input), drawing_line(false), dragging(false), draw_grid(true), hovering_vertex(false)
 {
 	view.world_pos = {0.0, 0.0};
 	view.scale = 1.0;
@@ -35,13 +38,17 @@ MapEditor::~MapEditor()
 
 void MapEditor::handleEvents(const ALLEGRO_EVENT &ev)
 {
-	if (dragging)
-	{
-		vec2d mouse = View::screenToWorld(m_input->getMousePos(), view);
-		vec2d delta = mouse - dragging_mouse_begin;
-		view.world_pos = dragging_world_begin + delta;
+	if (dragging) view.world_pos = dragging_world_begin + vec2d(dragging_mouse_begin - m_input->getMousePos()) / view.scale;
 
-		std::cout << "delta = " << delta << "\n";
+	if (ev.type == ALLEGRO_EVENT_MOUSE_AXES)
+	{
+		vec2d vertex;
+		if (getHoveredVert(vertex, m_input->getMousePos(), map, view))
+		{
+			hovered_vertex = vertex;
+			hovering_vertex = true;
+		}
+		else hovering_vertex = false;
 	}
 }
 
@@ -71,8 +78,11 @@ void MapEditor::draw()
 {
 	map.draw(view, draw_grid);
 
-	al_draw_line(view.size.x / 2, view.size.y / 2 - 32, view.size.x / 2 , view.size.y /2 + 32, al_map_rgb(0, 255, 0), 1);
-	al_draw_line(view.size.x / 2 - 32, view.size.y / 2, view.size.x / 2 + 32, view.size.y / 2, al_map_rgb(0, 255, 0), 1);
+	if (hovering_vertex)
+	{
+		View::drawFilledCircle(view, hovered_vertex, 4, al_map_rgb(255, 0 ,0));
+		View::drawCircle(view, hovered_vertex, 0.25 * map.getTileSz(), al_map_rgb(255, 0 ,0), 1);
+	}
 }
 
 void MapEditor::pushCommand(std::unique_ptr<Command> c)
@@ -101,7 +111,7 @@ void MapEditor::onMiddleMouseUp()
 void MapEditor::onMiddleMouseDown()
 {
 	dragging_world_begin = view.world_pos;
-	dragging_mouse_begin = View::screenToWorld(m_input->getMousePos(), view);
+	dragging_mouse_begin = m_input->getMousePos();
 	dragging = true;
 }
 void MapEditor::onLeftMouseUp()
@@ -213,7 +223,7 @@ void MapEditor::enableKeybinds()
 		{ if (m_input->isModifierDown(ALLEGRO_KEYMOD_CTRL)) view.world_pos = { 0, 0 }; });
 
 	m_input->setKeybind(ALLEGRO_KEY_R, [this]()
-		{ view.scale = 1.0; });
+		{ view.scale = 1.0; view.world_pos = { 0, 0 }; });
 }
 
 void MapEditor::disableKeybinds()
@@ -228,4 +238,46 @@ void MapEditor::disableKeybinds()
 	m_input->clearKeybind(ALLEGRO_KEY_Y);
 	m_input->clearKeybind(ALLEGRO_KEY_C);
 	m_input->clearKeybind(ALLEGRO_KEY_R);
+}
+
+bool getHoveredVert(vec2d& ret_vert, const vec2d& mouse_position, const Map& map, const View::ViewPort& view)
+{
+	bool hovering = false;
+	int tile_size = map.getTileSz();
+
+	vec2d mouse_world_pos = View::screenToWorld(mouse_position, view);
+	vec2i hovered_tile = vec2i(mouse_world_pos) / tile_size;
+
+	if (mouse_world_pos.x < 0) hovered_tile.x -= 1;
+	if (mouse_world_pos.y < 0) hovered_tile.y -= 1;
+
+	vec2d tile_offset = mouse_world_pos / double(tile_size);
+
+	vec2d vertices[4] = {
+							vec2d(hovered_tile.x + 0, hovered_tile.y + 0),
+							vec2d(hovered_tile.x + 1, hovered_tile.y + 0),
+							vec2d(hovered_tile.x + 0, hovered_tile.y + 1),
+							vec2d(hovered_tile.x + 1, hovered_tile.y + 1)
+						};
+
+	double closest = 1.0;
+	int vert_chosen = 0;
+	for (int i = 0; i < 4; ++i)
+	{
+		double distsq = magSquared(tile_offset - vertices[i]);
+
+		if (distsq < closest)
+		{
+			vert_chosen = i;
+			closest = distsq;
+		}
+	}
+
+	if (closest < 0.25 * 0.25)
+	{
+		ret_vert = vertices[vert_chosen] * tile_size;
+		hovering = true;
+	}
+
+	return hovering;
 }

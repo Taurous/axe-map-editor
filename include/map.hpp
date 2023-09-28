@@ -33,6 +33,7 @@ public:
 
 	vec2i getTilePos(const View::ViewPort& v, const vec2d& screen_pos);
 	void getVisibleTileRect(const View::ViewPort& v, vec2i& tl, vec2i& br);
+	const int getTileSz() const;
 
 private:
 	std::vector<Line> lines;
