@@ -12,7 +12,7 @@ constexpr double MAX_ZOOM = 2.19;
 constexpr double ZOOM_FACTOR = 0.08;
 
 //Returns false if user is not hovering over a vertex, fills ret_vert with vertex info when return true
-bool getHoveredVert(vec2d& ret_vert, const vec2d& mouse_position, const Map& map, const View::ViewPort& view);
+bool getHoveredVert(vec2d& ret_vert, double hover_distance, const vec2d& mouse_position, const Map& map, const View::ViewPort& view);
 
 void MapEditor::resizeView(vec2i view_pos, vec2i view_size)
 {
@@ -43,7 +43,7 @@ void MapEditor::handleEvents(const ALLEGRO_EVENT &ev)
 	if (ev.type == ALLEGRO_EVENT_MOUSE_AXES)
 	{
 		vec2d vertex;
-		if (getHoveredVert(vertex, m_input->getMousePos(), map, view))
+		if (getHoveredVert(vertex, 0.25, m_input->getMousePos(), map, view))
 		{
 			hovered_vertex = vertex;
 			hovering_vertex = true;
@@ -240,9 +240,8 @@ void MapEditor::disableKeybinds()
 	m_input->clearKeybind(ALLEGRO_KEY_R);
 }
 
-bool getHoveredVert(vec2d& ret_vert, const vec2d& mouse_position, const Map& map, const View::ViewPort& view)
+bool getHoveredVert(vec2d& ret_vert, double hover_distance, const vec2d& mouse_position, const Map& map, const View::ViewPort& view)
 {
-	bool hovering = false;
 	int tile_size = map.getTileSz();
 
 	vec2d mouse_world_pos = View::screenToWorld(mouse_position, view);
@@ -251,33 +250,22 @@ bool getHoveredVert(vec2d& ret_vert, const vec2d& mouse_position, const Map& map
 	if (mouse_world_pos.x < 0) hovered_tile.x -= 1;
 	if (mouse_world_pos.y < 0) hovered_tile.y -= 1;
 
-	vec2d tile_offset = mouse_world_pos / double(tile_size);
-
-	vec2d vertices[4] = {
-							vec2d(hovered_tile.x + 0, hovered_tile.y + 0),
-							vec2d(hovered_tile.x + 1, hovered_tile.y + 0),
-							vec2d(hovered_tile.x + 0, hovered_tile.y + 1),
-							vec2d(hovered_tile.x + 1, hovered_tile.y + 1)
-						};
-
 	double closest = 1.0;
-	int vert_chosen = 0;
-	for (int i = 0; i < 4; ++i)
+	for (int x = 0; x < 2; ++x)
 	{
-		double distsq = magSquared(tile_offset - vertices[i]);
-
-		if (distsq < closest)
+		for (int y = 0; y < 2; ++y)
 		{
-			vert_chosen = i;
+			double distsq = magSquared(vec2d(mouse_world_pos / double(tile_size)) - vec2d(hovered_tile.x + x, hovered_tile.y + y));
+
+			if (distsq < closest)
+		{
+			ret_vert = vec2d(hovered_tile.x + x, hovered_tile.y + y) * tile_size;
 			closest = distsq;
+		}
 		}
 	}
 
-	if (closest < 0.25 * 0.25)
-	{
-		ret_vert = vertices[vert_chosen] * tile_size;
-		hovering = true;
-	}
+	if (closest < hover_distance * hover_distance) return true;
 
-	return hovering;
+	return false;
 }
